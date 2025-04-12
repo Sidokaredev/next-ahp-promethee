@@ -1,0 +1,54 @@
+import Image from "next/image";
+import { Button } from "../ui/button";
+
+export default function HomeNavigation() {
+  return (
+    <nav className="home-navigation
+    w-full pt-[0.5em] pb-[0.5em] shadow-[0px_10px_10px_-10px_rgba(33,35,38,0.1)]"
+    >
+      <div className="container-lg
+      max-w-7xl mx-auto flex justify-between"
+      >
+        <div className="flex gap-x-[0.5em]">
+          <Image
+            className="object-contain"
+            src={"/logos/kabsidoarjo.png"}
+            alt="Logo Kabupaten Sidoarjo"
+            width={40}
+            height={40}
+          />
+          <div className="leading-[1.25em]">
+            <h6 className="font-semibold">
+              Dinas Perpustakaan dan Kearsipan
+            </h6>
+            <p className="text-sm">
+              Kabupaten Sidoarjo
+            </p>
+          </div>
+        </div>
+        <div className="flex gap-x-[1em] items-center">
+          <p className="font-semibold text-sm text-gray-600 hover:text-primary cursor-pointer">
+            Informasi Penerimaan
+          </p>
+          <p className="font-semibold text-sm text-gray-600 hover:text-primary cursor-pointer">
+            Alur Pendaftaran
+          </p>
+        </div>
+        <div className="flex gap-x-[0.5em] items-center">
+          <Button
+            className="border-primary text-primary hover:text-primary cursor-pointer"
+            variant={"outline"}
+          >
+            Masuk
+          </Button>
+          <Button
+            className="cursor-pointer"
+            variant={"default"}
+          >
+            Daftar
+          </Button>
+        </div>
+      </div>
+    </nav>
+  )
+}
