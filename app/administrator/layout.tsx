@@ -7,9 +7,9 @@ export default function AdministratorLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="w-full">
+    <div className="w-full bg-[#ebeefb]">
       <AdministratorNavigation />
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl min-h-screen mx-auto">
         {children}
       </div>
     </div>

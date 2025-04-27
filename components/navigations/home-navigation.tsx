@@ -1,7 +1,12 @@
+'use client';
+
 import Image from "next/image";
 import { Button } from "../ui/button";
+import { useRouter } from "next/navigation";
 
 export default function HomeNavigation() {
+  const router = useRouter();
+
   return (
     <nav className="home-navigation
     w-full pt-[0.5em] pb-[0.5em] shadow-[0px_10px_10px_-10px_rgba(33,35,38,0.1)]"
@@ -38,12 +43,14 @@ export default function HomeNavigation() {
           <Button
             className="border-primary text-primary hover:text-primary cursor-pointer"
             variant={"outline"}
+            onClick={() => router.push("/accounts/signin")}
           >
             Masuk
           </Button>
           <Button
             className="cursor-pointer"
             variant={"default"}
+            onClick={() => router.push("/accounts/signup")}
           >
             Daftar
           </Button>

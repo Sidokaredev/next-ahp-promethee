@@ -1,14 +1,16 @@
 'use client'
 
-import { MasukSchema } from "@/app/form.schema";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { SignIn } from "@/src/services/accounts/auth";
+import { SignInSchema, SignInValuesType } from "@/src/services/accounts/zod-schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CheckedState } from "@radix-ui/react-checkbox";
-import { ExternalLink, LogIn } from "lucide-react";
+import { ExternalLink, LogIn, MessageCircleX } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -20,17 +22,31 @@ export default function Masuk() {
   const router = useRouter();
   /* state */
   const [show, setShow] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [err, setErr] = useState<Error | null>(null);
   const form = useForm({
-    resolver: zodResolver(MasukSchema),
+    resolver: zodResolver(SignInSchema),
     defaultValues: {
       email: "",
       password: ""
     }
   });
 
-  const onSubmit = (formValues: z.infer<typeof MasukSchema>) => {
-    console.log(formValues);
-  }
+  const onSubmit = async (formValues: SignInValuesType) => {
+    setLoading(true);
+    const signin = await SignIn(formValues);
+    if (signin instanceof Error) {
+      setLoading(false);
+      return setErr(signin);
+    };
+
+    if (signin.as === "peserta") {
+      return router.push("/peserta");
+    } else if (signin.as === "administrator") {
+      return router.push("/administrator");
+    }
+  };
+
   return (
     <div className="max-w-lg w-full ps-[1.5em] pe-[1.5em] pt-[1.5em] pb-[1.5em] bg-white rounded-sm">
       {/* <div className="mb-[2em] flex gap-x-[0.7em] justify-self-center items-center">
@@ -61,8 +77,17 @@ export default function Masuk() {
           Sistem Seleksi Peserta Magang di
           Dinas Perpustakaan dan Kearsipan Kabupaten Sidoarjo
         </p>
+        {err && (
+          <Alert className="mt-2 pt-2 pb-2 ps-3 pe-3 bg-red-50 text-red-500 border-0">
+            <MessageCircleX size={50} className="h-4 w-4" />
+            <AlertTitle>{err.name}</AlertTitle>
+            <AlertDescription className="text-red-400 text-sm">
+              {err.message}
+            </AlertDescription>
+          </Alert>
+        )}
         <Form {...form}>
-          <form className="mt-[2.5em] mb-[1.5em]" onSubmit={form.handleSubmit(onSubmit)}>
+          <form className="mt-[2em] mb-[1.5em]" onSubmit={form.handleSubmit(onSubmit)}>
             <FormField
               control={form.control}
               name="email"
@@ -111,7 +136,7 @@ export default function Masuk() {
                 )
               }}
             />
-            <Button type="submit" className="w-full mt-[1em] cursor-pointer" variant={"default"}>Masuk</Button>
+            <Button disabled={loading} type="submit" className="w-full mt-[1em] cursor-pointer" variant={"default"}>Masuk</Button>
           </form>
         </Form>
         <div className="flex items-center text-gray-700">
