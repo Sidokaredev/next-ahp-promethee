@@ -2,10 +2,9 @@
 
 import { PeriodeSeleksiValuesType } from "./zod-schema";
 import { db } from "@/src/databases/mysql/init";
-import { tablePendaftar, tablePengguna, tablePeriodeSeleksi, tablePeserta } from "@/src/databases/mysql/schema";
+import { tablePeriodeSeleksi } from "@/src/databases/mysql/schema";
 import { SuccessMessage } from "../base";
-import { and, desc, eq, like, or, sql } from "drizzle-orm";
-import { tablePendaftarColumns, tablePesertaColumns } from "@/src/databases/mysql/define-columns";
+import { and, desc, eq, like } from "drizzle-orm";
 
 /**
  * Type
@@ -18,12 +17,6 @@ export type PeriodeSeleksiDetailType = {
     offset: number;
     page: number;
     count: number;
-  }
-}
-export type DataPesertaPeriodeSeleksiType = {
-  pendaftar: typeof tablePendaftar.$inferSelect;
-  peserta: typeof tablePeserta.$inferSelect & {
-    email: string;
   }
 }
 /**
@@ -116,44 +109,6 @@ export async function ChangePeriodeSeleksi(id: number, data: PeriodeSeleksiValue
     if (err instanceof Error) {
       return err;
     }
-
-    console.log("unknown err\t:", err);
-    return err as Error;
-  }
-}
-
-export async function GetDaftarPeserta(options: {
-  periodeSeleksiId: number;
-  query?: string;
-  page?: number;
-}): Promise<DataPesertaPeriodeSeleksiType[] | Error> {
-  try {
-    const offset = options.page ? ((options.page * 10) - 10) : 0;
-    const dataPeserta = await db.select({
-      pendaftar: {
-        ...tablePendaftarColumns
-      },
-      peserta: {
-        ...tablePesertaColumns,
-        email: tablePengguna.email
-      }
-    })
-      .from(tablePendaftar)
-      .innerJoin(tablePeserta, eq(tablePendaftar.peserta_id, tablePeserta.id))
-      .innerJoin(tablePengguna, eq(tablePengguna.id, tablePeserta.pengguna_id))
-      .where(and(
-        eq(tablePendaftar.periode_seleksi_id, options.periodeSeleksiId),
-        or(
-          options.query ? like(tablePeserta.nama_lengkap, `%${options.query}%`) : undefined,
-          options.query ? like(tablePeserta.nim, `%${options.query}%`) : undefined,
-        )
-      ))
-      .orderBy(desc(tablePendaftar.created_at))
-      .limit(10)
-      .offset(offset);
-
-    return dataPeserta;
-  } catch (err) {
 
     console.log("unknown err\t:", err);
     return err as Error;

@@ -16,7 +16,7 @@ import { PeriodeSeleksiValuesType } from "@/src/services/administrator/zod-schem
 import { SuccessMessage } from "@/src/services/base";
 import { UseFormReturn } from "react-hook-form";
 import { formatterDateIndonesian, statuStyler } from "@/lib/utils";
-import { useDebounce, useDebouncedCallback } from "use-debounce";
+import { useDebounce } from "use-debounce";
 
 export default function RiwayatSeleksiPeserta() {
   /* hook */
@@ -163,7 +163,7 @@ export default function RiwayatSeleksiPeserta() {
 
       return setDataPeriodeSeleksi(data)
     })();
-  }, [refetch, paginate.current, debouncedQuery]);
+  }, [refetch, paginate.current, debouncedQuery]); // default paginate.current
   return (
     <div className="ps-[0em] pe-[0em] pt-[1em] pb-[2em]">
       {/* message@notification */}
@@ -295,9 +295,7 @@ export default function RiwayatSeleksiPeserta() {
                   </div>
                 </div>
               </div>
-              <Button className="cursor-pointer
-              bg-[#c2cdf2] hover:bg-[#7189e2] text-[#243d95] hover:text-white
-              border-[#aebcee]"
+              <Button className="cursor-pointer bg-primary hover:bg-[#1f3480] text-white hover:text-white"
                 variant={"outline"} size={"sm"}
                 onClick={() => router.push(`${pathname}/${data.id}`)}
               >

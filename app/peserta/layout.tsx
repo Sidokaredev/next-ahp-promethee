@@ -8,12 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { ChangeProfilePeserta, GetProfilePeserta, ProfilePesertaType } from "@/src/services/peserta/profile";
 import { Pencil } from "lucide-react";
-import Image from "next/image";
 import React, { ChangeEvent, useEffect, useState } from "react";
 import { NotificationType } from "../globals-type";
-import { profile } from "console";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FormControl } from "@/components/ui/form";
 
 export default function PesertaLayout({
   children,
@@ -46,6 +43,7 @@ export default function PesertaLayout({
     }
   });
   const [err, setErr] = useState<Error | null>(null);
+  console.log("err from layout peserta", err);
   const [refetch, setRefetch] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [edit, setEdit] = useState<boolean>(false);

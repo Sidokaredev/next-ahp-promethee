@@ -1,23 +1,22 @@
 'use client'
 
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { House, Layers, ListChecks, ListOrdered, MessageCircleX, UserRound, UserRoundCheck } from "lucide-react";
-import Link from "next/link";
+import { ArrowLeft, ListChecks, ListOrdered, MessageCircleX, Settings2, UserRound } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import Peserta from "./_components/peserta";
 import ValidasiKriteria from "./_components/validasi-kriteria";
-import DataAlternatif from "./_components/data-alternatif";
+import DataAlternatif from "./_components/informasi-perangkingan";
 import Pemeringkatan from "./_components/pemeringkatan";
-import PesertaDiterima from "./_components/peserta-diterima";
 import { GetPeriodeSeleksi, PeriodeSeleksiType } from "@/src/services/administrator/periode-seleksi";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import MessageNotification from "@/components/notifications/message";
 import { NotificationType } from "@/app/globals-type";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 
 export default function DetailSeleksi() {
   //  hook@params
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   // state@data
   const [tab, setTab] = useState<string>("peserta");
   const [periodeSeleksi, setPeriodeSeleksi] = useState<PeriodeSeleksiType>();
@@ -32,10 +31,10 @@ export default function DetailSeleksi() {
   /* tabs-component */
   const tabsComponent: Record<string, React.ReactElement> = {
     "peserta": <Peserta />,
-    "validasi_kriteria": <ValidasiKriteria />,
-    "data_alternatif": <DataAlternatif />,
-    "pemeringkatan": <Pemeringkatan />,
-    "peserta_diterima": <PesertaDiterima />
+    "validasi_kriteria": <ValidasiKriteria setNotification={setNotification} />,
+    "data_alternatif": <DataAlternatif setNotification={setNotification} />,
+    "pemeringkatan": <Pemeringkatan setNotification={setNotification} />,
+    // "peserta_diterima": <PesertaDiterima />
   }
 
   useEffect(() => {
@@ -59,25 +58,16 @@ export default function DetailSeleksi() {
         timeoutS={notification.seconds}
       />
       <div>
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href={"/administrator"} className="text-[#aebcee] hover:!text-[#859ae6] hover:!font-semibold">
-                  <House size={18} strokeWidth={2.5} />
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href={"/administrator"} className="text-[#aebcee] hover:!text-[#859ae6] hover:font-semibold">
-                  Seleksi Peserta
-                </Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
+        <div>
+          <Button size={"sm"} variant={"ghost"} className="cursor-pointer text-gray-600"
+            onClick={() => {
+              router.back();
+            }}
+          >
+            <ArrowLeft />
+            Kembali
+          </Button>
+        </div>
         <p className="mt-5 font-semibold text-lg text-[#3457D5]">
           {periodeSeleksi?.nama}
         </p>
@@ -142,12 +132,12 @@ export default function DetailSeleksi() {
             onClick={() => {
               setTab("data_alternatif")
             }}>
-            <Layers
+            <Settings2
               size={25}
               strokeWidth={2.5}
               color={`${Boolean(tab == "data_alternatif") ? "#3457d5" : "#6a7282"}`}
               className={`${Boolean(tab == "data_alternatif") ? "p-1 bg-[#c2cdf2] rounded-xl" : "p-1"} mt-[-0.25]`} />
-            Data Alternatif
+            Informasi Perangkingan
           </div>
           {/* TAB : PEMERINGKATAN */}
           <div className={`
@@ -164,10 +154,10 @@ export default function DetailSeleksi() {
               strokeWidth={2.5}
               color={`${Boolean(tab == "pemeringkatan") ? "#3457d5" : "#6a7282"}`}
               className={`${Boolean(tab == "pemeringkatan") ? "p-1 bg-[#c2cdf2] rounded-xl" : "p-1"} mt-[-0.25]`} />
-            Pemeringkatan
+            Ranking
           </div>
           {/* TAB : PESERTA DITERIMA */}
-          <div className={`
+          {/* <div className={`
           ${Boolean(tab == "peserta_diterima") ?
               "bg-white text-[#3457d5]" :
               "text-gray-500"
@@ -182,7 +172,7 @@ export default function DetailSeleksi() {
               color={`${Boolean(tab == "peserta_diterima") ? "#3457d5" : "#6a7282"}`}
               className={`${Boolean(tab == "peserta_diterima") ? "p-1 bg-[#c2cdf2] rounded-xl" : "p-1"} mt-[-0.25]`} />
             Peserta Diterima
-          </div>
+          </div> */}
         </div>
         {/* Tab Content */}
         <div className="p-2 bg-white rounded-b-sm">

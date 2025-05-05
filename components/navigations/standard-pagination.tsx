@@ -1,6 +1,6 @@
 'use client'
 
-import React, { SetStateAction, useState } from "react";
+import React, { SetStateAction } from "react";
 import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "../ui/pagination"
 
 export type PaginateProps = {
@@ -19,7 +19,7 @@ export default function StandardPagination({
   totalData: number;
 }) {
   // state@data-paginate
-  const totalPagination = Math.ceil(totalData / 7);
+  const totalPagination = Math.ceil(totalData / 10);
   const paginationItems = Array.from({ length: totalPagination }, (_, idx) => idx + 1).slice(paginate.startRange, paginate.endRange);
 
   // handler@paginate-previous
@@ -125,7 +125,7 @@ export default function StandardPagination({
             </PaginationItem>
           </>
         )}
-        <PaginationItem className={paginate.current == totalPagination ? "pointer-events-none text-gray-400" : "" + "select-none cursor-pointer"}>
+        <PaginationItem className={(paginate.current == totalPagination || totalData == 0) ? "pointer-events-none text-gray-400" : "" + "select-none cursor-pointer"}>
           <PaginationNext size={"sm"} onClick={handleNext} />
         </PaginationItem>
       </PaginationContent>

@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator"
 import { formatterDateIndonesian, statuStyler } from "@/lib/utils";
 import { tablePeriodeSeleksi } from "@/src/databases/mysql/schema";
 import { AddPendaftarPeriodeSeleksi, GetPeriodeSeleksi, GetTerdaftarPeriodeSeleksi } from "@/src/services/peserta/periode-seleksi";
-import { CalendarClock, CalendarX, CircleDot, UserRound, UserRoundCheck } from "lucide-react"
+import { CalendarClock, CalendarX, CircleDot } from "lucide-react"
 import React, { SetStateAction, useEffect, useState } from "react";
 import FormDaftarPeriodeSeleksi from "./form-daftar-periode-seleksi";
 import { DaftarPeriodeSeleksiValuesType } from "@/src/services/peserta/zod-schema";

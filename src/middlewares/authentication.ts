@@ -51,6 +51,17 @@ export async function AuthenticationRole(request: NextRequest): Promise<NextResp
       return NextResponse.redirect(new URL("/", request.url))
     }
 
+    // // cookies@update
+    // const timeExp = new Date(Date.now() + 1 * 60 * 60 * 1000);
+    // const cookieStore = await cookies();
+    // cookieStore.set(hasAuthCookie.name, hasAuthCookie.value, {
+    //   httpOnly: true,
+    //   expires: timeExp,
+    //   sameSite: "lax"
+    // })
+
+    // IF EXPIRED DIRECT TO LOGIN PAGE
+
     const req = await fetch(`http://localhost:3000/api/roles?token=${hasAuthCookie.value}`, { method: "GET" });
     const { role } = await req.json();
 

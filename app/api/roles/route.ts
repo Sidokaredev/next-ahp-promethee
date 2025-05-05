@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
       role
     }, { status: 200 });
   } catch (err) {
+    console.log("err roles \t:", err)
     if (err instanceof Error) {
       return NextResponse.json({
         name: err.name,

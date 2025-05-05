@@ -1,7 +1,7 @@
 'use client';
 
 import { NotificationType } from "@/app/globals-type";
-import React, { SetStateAction, useEffect, useState } from "react";
+import React, { SetStateAction, useEffect } from "react";
 
 export default function MessageNotification({
   show,
@@ -34,7 +34,7 @@ export default function MessageNotification({
   }, [show])
   return (
     <div className={`
-    max-w-sm pt-2 pb-2 ps-4 pe-4 fixed z-50 top-[2em] left-1/2 -translate-x-1/2 bg-white shadow-sm shadow-blue-100 rounded-sm border
+    max-w-sm pt-2 pb-2 ps-4 pe-4 fixed z-[999] top-[2em] left-1/2 -translate-x-1/2 bg-white shadow-sm shadow-blue-100 rounded-sm border
     transition-all duration-500 ease-in-out
     ${show ? "opacity-100 translate-y-0 max-h-40" : "opacity-0 -translate-y-4 max-h-0"}
     `}>

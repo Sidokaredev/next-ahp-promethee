@@ -14,12 +14,15 @@ import {
 import { useEffect, useState } from "react";
 import { LogOut as LogOutSession } from "@/src/services/accounts/auth";
 import { GetNameNavigation } from "@/src/services/base";
+import { useRouter } from "next/navigation";
 
 export default function AdministratorNavigation() {
+  // hook@router
+  const router = useRouter();
   /* state */
   const [navScrolled, setNavScrolled] = useState<boolean>(false);
   const [name, setName] = useState<string>("");
-  const [err, setErr] = useState<Error | null>(null);
+  // const [err, setErr] = useState<Error | null>(null);
   /* side-effect */
   useEffect(() => {
     const onScroll = () => {
@@ -33,14 +36,15 @@ export default function AdministratorNavigation() {
     (async () => {
       const data = await GetNameNavigation();
       if (data instanceof Error) {
-        return setErr(data);
+        // return setErr(data);
+        return;
       }
 
       return setName(data.split(" ")[0])
     })();
   }, []);
   return (
-    <nav className="sticky top-0 w-full pt-[0.5em] pb-[0.5em] bg-gray-50 z-10"
+    <nav className="sticky top-0 w-full pt-[0.5em] pb-[0.5em] bg-gray-50 z-[100]"
       style={{
         backgroundColor: navScrolled ? "white" : "#ebeefb",
         boxShadow: navScrolled ? " rgba(52,87,213,0.1) 0px 10px 10px -10px" : "",
@@ -79,7 +83,9 @@ export default function AdministratorNavigation() {
                 <Text size={20} className="rotate-180" />
               </MenubarTrigger>
               <MenubarContent align="end" className="min-w-[10em] mt-[0.8em]">
-                <MenubarItem className="group w-full font-semibold cursor-pointer hover:!text-primary">
+                <MenubarItem className="group w-full font-semibold cursor-pointer hover:!text-primary"
+                  onClick={() => router.push("/")}
+                >
                   Halaman Utama
                   <MenubarShortcut>
                     <Home className="group-hover:!text-primary" />

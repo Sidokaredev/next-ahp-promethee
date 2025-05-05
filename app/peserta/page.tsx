@@ -1,12 +1,6 @@
 'use client';
 
-import { Avatar } from "@/components/ui/avatar";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
-import { AvatarImage } from "@radix-ui/react-avatar";
-import { CalendarClock, CircleDot, Edit, Home, House, Link, Pencil } from "lucide-react";
-import Image from "next/image";
+import { CalendarClock, CircleDot } from "lucide-react";
 import { useState } from "react";
 import PeriodePendaftaran from "./_components/periode-pendaftaran";
 import StatusPendaftaran from "./_components/status-pendaftaran";

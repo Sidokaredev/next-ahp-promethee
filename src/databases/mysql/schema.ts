@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { mysqlTable, primaryKey, foreignKey, customType } from "drizzle-orm/mysql-core";
+import { mysqlTable, foreignKey, customType } from "drizzle-orm/mysql-core";
 import * as type from "drizzle-orm/mysql-core";
 import { Buffer } from "node:buffer";
 
@@ -114,6 +114,7 @@ export const tablePeriodeSeleksi = mysqlTable("periode_seleksi", {
 export const tablePeriodeSeleksiRelations = relations(tablePeriodeSeleksi, ({ many }) => {
   return {
     pendaftar: many(tablePendaftar),
+    bobot_kriteria: many(tableBobotKriteria),
   }
 });
 
@@ -181,40 +182,106 @@ export const tablePendaftarRelations = relations(tablePendaftar, ({ one }) => {
   }
 });
 
-// export const kriteria = mysqlTable("kriteria", {
-//   id: type.int().primaryKey().autoincrement(),
-//   nama: type.varchar({ length: 64 }).notNull(),
-//   ...timestamps,
-// })
+export const tableKriteria = mysqlTable("kriteria", {
+  id: type.int().primaryKey().autoincrement(),
+  nama: type.varchar({ length: 512 }).notNull(),
+  ...timestamps,
+});
 
-// export const kriteriaPeriodeSeleksi = mysqlTable("kriteria_periode_seleksi", {
-//   kriteria_id: type.int().notNull(),
-//   periode_seleksi_id: type.bigint({ mode: "number" }).notNull(),
-// }, (table) => [
-//   primaryKey({ name: "composite_kriteria_periode_seleksi", columns: [table.kriteria_id, table.periode_seleksi_id] }),
-//   foreignKey({
-//     columns: [table.kriteria_id],
-//     foreignColumns: [kriteria.id],
-//     name: "m2m_fk_kriteria",
-//   }),
-//   foreignKey({
-//     columns: [table.periode_seleksi_id],
-//     foreignColumns: [tablePeriodeSeleksi.id],
-//     name: "m2m_fk_periode_seleksi"
-//   })
-// ]);
+export const tableKriteriaRelations = relations(tableKriteria, ({ many }) => {
+  return {
+    skala_perbandingan: many(tableSkalaPerbandingan),
+    bobot_kriteria: many(tableBobotKriteria)
+  }
+})
 
-// export const skalaPerbandingan = mysqlTable("skala_perbandingan", {
-//   id: type.int().primaryKey().autoincrement(),
-//   matrix_ref: type.varchar({ length: 256 }).notNull(),
-//   nilai: type.decimal({ precision: 6, scale: 5 }).notNull(),
-//   periode_seleksi_id: type.bigint({ mode: "number" }).notNull(),
-//   ...timestamps
-// }, (table) => [
-//   foreignKey({
-//     columns: [table.periode_seleksi_id],
-//     foreignColumns: [tablePeriodeSeleksi.id],
-//     name: "fk_skala_perbandingan_periode_seleksi"
-//   })
-// ]);
+export const tableSkalaPerbandingan = mysqlTable("skala_perbandingan", {
+  id: type.int().primaryKey().autoincrement(),
+  matrix_ref: type.varchar({ length: 256 }).notNull(),
+  nilai: type.decimal({ precision: 6, scale: 5 }).notNull(),
+  periode_seleksi_id: type.bigint({ mode: "number" }).notNull(),
+  ...timestamps
+}, (table) => [
+  foreignKey({
+    columns: [table.periode_seleksi_id],
+    foreignColumns: [tablePeriodeSeleksi.id],
+    name: "fk_skala_perbandingan_periode_seleksi"
+  })
+]);
+
+export const tableSkalaPerbandinganRelations = relations(tableSkalaPerbandingan, ({ one }) => {
+  return {
+    periode_seleksi: one(tablePeriodeSeleksi, {
+      fields: [tableSkalaPerbandingan.periode_seleksi_id],
+      references: [tablePeriodeSeleksi.id]
+    })
+  }
+})
+
+export const tableBobotKriteria = mysqlTable("bobot_kriteria", {
+  id: type.int().primaryKey().autoincrement(),
+  nilai: type.decimal({ precision: 4, scale: 3 }).notNull(),
+  kriteria_id: type.int().notNull(),
+  periode_seleksi_id: type.bigint({ mode: "number" }).notNull(),
+  ...timestamps,
+}, (table) => [
+  foreignKey({
+    columns: [table.kriteria_id],
+    foreignColumns: [tableKriteria.id],
+    name: "fk_bobot_kriteria"
+  }),
+  foreignKey({
+    columns: [table.periode_seleksi_id],
+    foreignColumns: [tablePeriodeSeleksi.id],
+    name: "fk_bobot_periode_seleksi"
+  })
+])
+
+export const tableBobotKriteriaRelations = relations(tableBobotKriteria, ({ one }) => {
+  return {
+    kriteria: one(tableKriteria, {
+      fields: [tableBobotKriteria.kriteria_id],
+      references: [tableKriteria.id]
+    }),
+    periode_seleksi: one(tablePeriodeSeleksi, {
+      fields: [tableBobotKriteria.periode_seleksi_id],
+      references: [tablePeriodeSeleksi.id]
+    })
+  }
+})
+
+export const tableFungsiPreferensi = mysqlTable("fungsi_preferensi", {
+  id: type.int().primaryKey().autoincrement(),
+  tipe: type.varchar({ length: 256 }).notNull(),
+  q: type.decimal(),
+  p: type.decimal(),
+  s: type.decimal(),
+  kriteria_id: type.int().notNull(),
+  periode_seleksi_id: type.bigint({ mode: "number" }).notNull(),
+  ...timestamps,
+}, (table) => [
+  foreignKey({
+    columns: [table.kriteria_id],
+    foreignColumns: [tableKriteria.id],
+    name: "fk_fungsi_preferensi_kriteria"
+  }),
+  foreignKey({
+    columns: [table.periode_seleksi_id],
+    foreignColumns: [tablePeriodeSeleksi.id],
+    name: "fk_fungsi_preferensi_periode_seleksi"
+  })
+])
+
+export const tableFungsiPreferensiRelations = relations(tableFungsiPreferensi, ({ one }) => {
+  return {
+    kriteria: one(tableKriteria, {
+      fields: [tableFungsiPreferensi.kriteria_id],
+      references: [tableKriteria.id]
+    }),
+    periode_seleksi: one(tablePeriodeSeleksi, {
+      fields: [tableFungsiPreferensi.periode_seleksi_id],
+      references: [tablePeriodeSeleksi.id]
+    })
+  }
+})
 

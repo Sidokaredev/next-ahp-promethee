@@ -1,5 +1,4 @@
 import HomeNavigation from "@/components/navigations/home-navigation";
-import Image from "next/image";
 
 export default function Home() {
   return (

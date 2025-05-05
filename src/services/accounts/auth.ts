@@ -150,7 +150,7 @@ export async function SignIn(data: SignInValuesType): Promise<AuthSuccess | Erro
       return err
     }
 
-    let success: AuthSuccess = {
+    const success: AuthSuccess = {
       message: "auth success",
       as: "peserta"
     };

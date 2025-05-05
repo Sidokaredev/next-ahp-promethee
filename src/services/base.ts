@@ -66,3 +66,9 @@ export async function GetNameNavigation(): Promise<string | Error> {
     return err as Error;
   }
 }
+
+export async function CheckCredential(): Promise<string | undefined> {
+  const cookie = await cookies();
+  const check = cookie.get("enc-cre")?.value;
+  return check;
+}

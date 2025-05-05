@@ -100,8 +100,8 @@ export async function ChangeProfilePeserta(data: ProfilePesertaType): Promise<Pe
       akreditasi: data.akreditasi,
       jurusan: data.jurusan,
       nim: data.nim,
-      no_telepon: data.no_telepon
-    });
+      no_telepon: data.no_telepon // ERROR
+    }).where(eq(tablePeserta.id, data.id));
 
     return {
       name: "peserta:profile-peserta@change",

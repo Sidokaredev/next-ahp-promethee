@@ -103,7 +103,7 @@ export async function AddPendaftarPeriodeSeleksi(periodeSeleksiId: number, data:
       // update@periode-seleksi:[total_pendaftar]
       await tx.update(tablePeriodeSeleksi).set({
         total_pendaftar: sql`${tablePeriodeSeleksi.total_pendaftar} + 1`,
-      })
+      }).where(eq(tablePeriodeSeleksi.id, periodeSeleksiId));
     });
 
     return {

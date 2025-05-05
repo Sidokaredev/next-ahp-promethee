@@ -38,7 +38,8 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (err) {
-
+    console.log("unknown err\t:", err);
+    return NextResponse.json({ error: "unknown error" }, { status: 500 });
   }
 
 }

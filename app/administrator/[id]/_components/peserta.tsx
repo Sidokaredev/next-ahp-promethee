@@ -5,7 +5,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DataPesertaPeriodeSeleksiType, GetDaftarPeserta } from "@/src/services/administrator/periode-seleksi"
+import { DataPesertaPeriodeSeleksiType, GetDaftarPeserta } from "@/src/services/administrator/pendaftar"
 import { Award, FileCheck, MessageCircleX, Search } from "lucide-react"
 import { useParams } from "next/navigation"
 import { ChangeEvent, useEffect, useState } from "react"
@@ -16,6 +16,7 @@ export default function Peserta() {
   const params = useParams<{ id: string }>();
   // state@data
   const [dataPeserta, setDataPeserta] = useState<DataPesertaPeriodeSeleksiType[]>([]);
+  const [totalDataPeserta, setTotalDataPeserta] = useState<number>(0);
   // state@data-pagination
   const [paginate, setPaginate] = useState<{
     current: number;
@@ -35,18 +36,19 @@ export default function Peserta() {
   /* fetch@data-peserta */
   useEffect(() => {
     (async () => {
-      const data = await GetDaftarPeserta({
+      const query = await GetDaftarPeserta({
         periodeSeleksiId: Number(params.id),
         query: debouncedQuery,
         page: paginate.current,
       });
-      if (data instanceof Error) {
-        return setErr(data);
+      if (query instanceof Error) {
+        return setErr(query);
       }
 
-      return setDataPeserta(data);
+      setTotalDataPeserta(query.totalData);
+      return setDataPeserta(query.data);
     })();
-  }, [debouncedQuery]);
+  }, [debouncedQuery, paginate.current]);
   return (
     <div className="">
       {err && (
@@ -84,51 +86,52 @@ export default function Peserta() {
           />
         </div>
       </div>
-      <div className="custom-table">
-        <div className="custom-table-head p-2 rounded-sm grid grid-cols-[5%_20%_20%_15%_20%_20%] font-semibold text-[#3457d5] bg-[#c2cdf2]">
-          <div className="text-base">
+      <div className="custom-table mb-[2em]">
+        <div className="custom-table-head rounded-t-sm grid grid-cols-[5%_20%_20%_15%_20%_20%] font-semibold text-white bg-primary">
+          <div className="text-base p-3 border-r">
             No
           </div>
-          <div className="text-base">
+          <div className="text-base p-3 border-r">
             Nama
           </div>
-          <div className="text-base">
+          <div className="text-base p-3 border-r">
             Pendidikan
           </div>
-          <div className="text-base">
+          <div className="text-base p-3 border-r">
             Kontak
           </div>
-          <div className="text-base">
+          <div className="text-base p-3 border-r">
             Nilai
           </div>
-          <div className="text-base">
+          <div className="text-base p-3">
             Kelengkapan Dokumen
           </div>
         </div>
         <div className="custom-table-body">
           {dataPeserta.map((data, idx) => {
             return (
-              <div key={idx} className="p-2 grid grid-cols-[5%_20%_20%_15%_20%_20%] hover:bg-gray-100">
-                <div className="flex items-center font-semibold">
-                  {idx + 1 + "."}
+              <div key={idx} className="grid grid-cols-[5%_20%_20%_15%_20%_20%] hover:bg-gray-100 border-b border-x">
+                <div className="p-2 flex font-semibold border-r">
+                  {idx + 1 + ((10 * paginate.current) - 10) + "."}
                 </div>
-                <div className="flex flex-col justify-center">
+                <div className="p-2 flex flex-col justify-center border-r">
                   <p className="font-semibold text-sm text-[#1f3480]">{data.peserta.nama_lengkap}</p>
                   <p className="text-sm text-gray-600 break-words">{data.peserta.email}</p>
+                  <p className="font-semibold text-sm text-gray-600 break-words">{data.peserta.nim}</p>
                   <div className="bg-primary">
                   </div>
                 </div>
-                <div className="flex flex-col justify-center">
+                <div className="p-2 flex flex-col justify-center border-r">
                   <p className="font-semibold text-sm text-[#1f3480] break-words">{data.peserta.universitas}</p>
                   <p className="text-sm text-gray-600 break-words">{data.peserta.jurusan}</p>
                   <p className="text-sm text-gray-800 break-words">{data.peserta.akreditasi === "Tidak Terakreditasi" ? data.peserta.akreditasi : "Akreditasi " + data.peserta.akreditasi}</p>
                 </div>
-                <div className="flex flex-col justify-center">
+                <div className="p-2 flex flex-col justify-center border-r">
                   <p className="text-sm text-gray-800 break-words">
-                    <span>+(62) 85784464441</span>
+                    <span>+(62) {data.peserta.no_telepon}</span>
                   </p>
                 </div>
-                <div className="flex items-center">
+                <div className="p-2 flex items-center border-r">
                   <div>
                     <p className="font-semibold text-sm text-[#1f3480]">
                       Indeks Prestasi Kumulatif (IPK)
@@ -141,12 +144,12 @@ export default function Peserta() {
                     <p className="mt-1 font-semibold text-sm text-gray-600">Semester {data.pendaftar.semester}</p>
                   </div>
                 </div>
-                <div className="">
+                <div className="p-2">
                   <div className="flex flex-col space-y-[0.2em] text-sm">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger>
-                          <div className="p-1 flex items-center gap-x-2 text-gray-700 hover:bg-primary hover:text-white cursor-pointer hover:rounded-sm border-b"
+                          <div className="p-1 flex items-center gap-x-2 text-[#1f3480] hover:bg-primary hover:text-white cursor-pointer hover:rounded-sm border-b"
                             onClick={() => {
                               window.open("/api/dokumen?docid=" + data.pendaftar.sp_universitas_id, "_blank");
                             }}
@@ -163,7 +166,7 @@ export default function Peserta() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger>
-                          <div className="p-1 flex items-center gap-x-2 text-gray-700 hover:bg-primary hover:text-white cursor-pointer hover:rounded-sm border-b"
+                          <div className="p-1 flex items-center gap-x-2 text-[#1f3480] hover:bg-primary hover:text-white cursor-pointer hover:rounded-sm border-b"
                             onClick={() => {
                               window.open("/api/dokumen?docid=" + data.pendaftar.sp_bakesbangpol_provinsi_id, "_blank");
                             }}
@@ -180,7 +183,7 @@ export default function Peserta() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger>
-                          <div className="p-1 flex items-center gap-x-2 text-gray-700 hover:bg-primary hover:text-white cursor-pointer hover:rounded-sm border-b"
+                          <div className="p-1 flex items-center gap-x-2 text-[#1f3480] hover:bg-primary hover:text-white cursor-pointer hover:rounded-sm"
                             onClick={() => {
                               window.open("/api/dokumen?docid=" + data.pendaftar.sp_bakesbangpol_daerah_id, "_blank");
                             }}
@@ -204,7 +207,7 @@ export default function Peserta() {
       <StandardPagination
         paginate={paginate}
         setPaginate={setPaginate}
-        totalData={dataPeserta.length}
+        totalData={totalDataPeserta}
       />
     </div>
   )

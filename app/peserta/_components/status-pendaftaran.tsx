@@ -5,9 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import { formatterDateIndonesian, statuStyler } from "@/lib/utils";
+import { formatterDateIndonesian } from "@/lib/utils";
 import { GetDataStatusTerdaftar, StatusTerdaftarType } from "@/src/services/peserta/periode-seleksi";
-import { ArrowUpRight, BookOpen, CalendarClock, CalendarDays, CalendarX, CircleDot, FileCheck, GraduationCap, Search } from "lucide-react";
+import { ArrowUpRight, BookOpen, FileCheck, GraduationCap, Search } from "lucide-react";
 import Link from "next/link";
 import { ChangeEvent, useEffect, useState } from "react"
 import { useDebounce } from "use-debounce";
@@ -15,7 +15,7 @@ import { useDebounce } from "use-debounce";
 export default function StatusPendaftaran() {
   // state@data
   const [statusTerdaftar, setStatusTerdaftar] = useState<StatusTerdaftarType[]>([]);
-  const [err, setErr] = useState<Error>();
+  // const [err, setErr] = useState<Error>();
   const [query, setQuery] = useState<string>("");
   const [debouncedQuery] = useDebounce(query, 800);
   const [paginate, setPaginate] = useState<PaginateProps>({
@@ -32,7 +32,8 @@ export default function StatusPendaftaran() {
         page: paginate.current,
       });
       if (data instanceof Error) {
-        return setErr(data);
+        // return setErr(data);
+        return;
       }
 
       setStatusTerdaftar(data);
@@ -76,7 +77,7 @@ export default function StatusPendaftaran() {
                   </p>
                 </div>
               </div>
-              <Badge variant={"secondary"} className="me-3">
+              <Badge variant={"secondary"} className={`me-3 ${data.pendaftar.status == "diterima" ? "bg-green-50 text-green-600 border border-green-200" : ""}`}>
                 {data.pendaftar.status}
               </Badge>
             </div>
