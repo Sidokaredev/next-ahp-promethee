@@ -34,15 +34,18 @@ export default function Masuk() {
   const onSubmit = async (formValues: SignInValuesType) => {
     setLoading(true);
     const signin = await SignIn(formValues);
-    if (signin instanceof Error) {
-      setLoading(false);
-      return setErr(signin);
-    };
+    switch (signin.response) {
+      case "data":
+        return router.push(`/${signin.data}`);
 
-    if (signin.as === "peserta") {
-      return router.push("/peserta");
-    } else if (signin.as === "administrator") {
-      return router.push("/administrator");
+      case "error":
+        setLoading(false);
+        const err = new Error(signin.message, { cause: signin.cause });
+        err.name = signin.name;
+        return setErr(err);
+
+      default:
+        break;
     }
   };
 

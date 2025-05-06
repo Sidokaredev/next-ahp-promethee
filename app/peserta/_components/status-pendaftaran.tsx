@@ -1,13 +1,14 @@
 'use client'
 
 import StandardPagination, { PaginateProps } from "@/components/navigations/standard-pagination";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { formatterDateIndonesian } from "@/lib/utils";
 import { GetDataStatusTerdaftar, StatusTerdaftarType } from "@/src/services/peserta/periode-seleksi";
-import { ArrowUpRight, BookOpen, FileCheck, GraduationCap, Search } from "lucide-react";
+import { ArrowUpRight, BookOpen, FileCheck, GraduationCap, Search, MessageCircleX } from "lucide-react";
 import Link from "next/link";
 import { ChangeEvent, useEffect, useState } from "react"
 import { useDebounce } from "use-debounce";
@@ -15,7 +16,7 @@ import { useDebounce } from "use-debounce";
 export default function StatusPendaftaran() {
   // state@data
   const [statusTerdaftar, setStatusTerdaftar] = useState<StatusTerdaftarType[]>([]);
-  // const [err, setErr] = useState<Error>();
+  const [err, setErr] = useState<Error>();
   const [query, setQuery] = useState<string>("");
   const [debouncedQuery] = useDebounce(query, 800);
   const [paginate, setPaginate] = useState<PaginateProps>({
@@ -27,20 +28,37 @@ export default function StatusPendaftaran() {
   useEffect(() => {
     // getAll@pendaftar&periode-seleksi[terdaftar]
     (async () => {
-      const data = await GetDataStatusTerdaftar({
+      const req = await GetDataStatusTerdaftar({
         query: debouncedQuery,
         page: paginate.current,
       });
-      if (data instanceof Error) {
-        // return setErr(data);
-        return;
-      }
+      switch (req.response) {
+        case "data":
+          return setStatusTerdaftar(req.data);
 
-      setStatusTerdaftar(data);
+        case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
+
+        default:
+          break;
+      }
     })();
   }, [debouncedQuery, paginate.current]);
   return (
     <div>
+      {err && (
+        <Alert className="mt-2 pt-2 pb-2 ps-4 pe-4 bg-red-100 text-red-500 border-0">
+          <MessageCircleX />
+          <AlertTitle className="text-sm">
+            {err.name}
+          </AlertTitle>
+          <AlertDescription className="text-sm text-red-500">
+            {err.message}
+          </AlertDescription>
+        </Alert>
+      )}
       <div className="mt-1 mb-[1em] flex items-center">
         <p className="grow ps-1 pe-1 font-bold text-lg text-gray-800">
           Histori dan Pemantauan Status Pendaftaran

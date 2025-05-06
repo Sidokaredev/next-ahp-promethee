@@ -6,6 +6,7 @@ import { eq } from "drizzle-orm";
 import * as jose from "jose";
 import { cookies } from "next/headers";
 import { TokenPayload } from "../accounts/auth";
+import { ServerActionResponse } from "../base";
 /**
  * Type
  */
@@ -49,17 +50,16 @@ export async function GetProfilePeserta<T>(options: {
         }
       }
     },
-  }): Promise<T | Error> {
+  }): Promise<ServerActionResponse<T>> {
   const cookieStore = await cookies();
   const token = cookieStore.get("enc-cre");
   if (!token) {
-    const err = new Error(
-      "Sesi anda pada sistem telah habis, silahkan masuk kembali",
-      { cause: "token pengguna tidak ditemukan" }
-    );
-    err.name = "token invalid";
-
-    return err;
+    return {
+      response: "error",
+      name: "Token invalid",
+      message: "Sesi anda pada sistem telah habis, silahkan masuk kembali",
+      cause: "Token pengguna tidak ditemukan atau rusak",
+    }
   }
 
   const secretToken = new Uint8Array(Buffer.from(process.env.SECRET_TOKEN!, "base64"));
@@ -72,27 +72,31 @@ export async function GetProfilePeserta<T>(options: {
       with: { ...options.relations }
     });
     if (!profiles) {
-      const err = new Error(
-        `Data peserta dengan id [${ID}] tidak dapat ditemukan`,
-        { cause: "data peserta tidak ditemukan atau id tidak valid" }
-      );
-      err.name = "data tidak ditemukan";
-
-      return err;
+      return {
+        response: "error",
+        name: "Data tidak ditemukan",
+        message: `Data peserta dengan id [${ID}] tidak dapat ditemukan`,
+        cause: "Data peserta tidak ditemukan atau id tidak valid"
+      }
     }
 
-    return profiles as T;
+    return {
+      response: "data",
+      data: profiles as T,
+    };
   } catch (err) {
-    if (err instanceof Error) {
-      return err;
-    }
-
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
-export async function ChangeProfilePeserta(data: ProfilePesertaType): Promise<PesertaSuccess | Error> {
+export async function ChangeProfilePeserta(data: ProfilePesertaType): Promise<ServerActionResponse<unknown>> {
   try {
     await db.update(tablePeserta).set({
       nama_lengkap: data.nama_lengkap,
@@ -104,11 +108,18 @@ export async function ChangeProfilePeserta(data: ProfilePesertaType): Promise<Pe
     }).where(eq(tablePeserta.id, data.id));
 
     return {
+      response: "success",
       name: "peserta:profile-peserta@change",
       message: "Berhasil mengubah data profile",
     }
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }

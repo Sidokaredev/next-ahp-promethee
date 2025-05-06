@@ -4,9 +4,10 @@ import { db } from "@/src/databases/mysql/init";
 import { tableDokumen, tablePendaftar, tablePeriodeSeleksi } from "@/src/databases/mysql/schema";
 import { and, desc, eq, gte, like, not, sql } from "drizzle-orm";
 import * as jose from "jose";
-import { DaftarPeriodeSeleksiValuesType } from "./zod-schema";
 import { cookies } from "next/headers";
 import { TokenPayload } from "../accounts/auth";
+import { DaftarPeriodeSeleksiValuesType } from "./zod-schema";
+import { ServerActionResponse } from "../base";
 /**
  * Type
  */
@@ -21,7 +22,7 @@ export type StatusTerdaftarType = {
 /**
  * PeriodeSeleksiFn
  */
-export async function GetPeriodeSeleksi(): Promise<typeof tablePeriodeSeleksi.$inferSelect[] | Error> {
+export async function GetPeriodeSeleksi(): Promise<ServerActionResponse<typeof tablePeriodeSeleksi.$inferSelect[]>> {
   try {
     const dataPeriodeSeleksi = await db.select()
       .from(tablePeriodeSeleksi)
@@ -32,28 +33,32 @@ export async function GetPeriodeSeleksi(): Promise<typeof tablePeriodeSeleksi.$i
       .orderBy(desc(tablePeriodeSeleksi.created_at))
       .limit(10);
 
-    return dataPeriodeSeleksi;
+    return {
+      response: "data",
+      data: dataPeriodeSeleksi,
+    };
   } catch (err) {
-    if (err instanceof Error) {
-      return err;
-    }
-
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
-export async function AddPendaftarPeriodeSeleksi(periodeSeleksiId: number, data: DaftarPeriodeSeleksiValuesType): Promise<PeriodeSeleksiSukses | Error> {
+export async function AddPendaftarPeriodeSeleksi(periodeSeleksiId: number, data: DaftarPeriodeSeleksiValuesType): Promise<ServerActionResponse<unknown>> {
   const cookieStore = await cookies();
   const token = cookieStore.get("enc-cre");
   if (!token) {
-    const err = new Error(
-      "Sesi anda pada sistem telah habis, silahkan masuk kembali",
-      { cause: "token pengguna tidak ditemukan" }
-    );
-    err.name = "token invalid";
-
-    return err;
+    return {
+      response: "error",
+      name: "Token invalid",
+      message: "Sesi anda pada sistem telah habis, silahkan masuk kembali",
+      cause: "Token pengguna tidak ditemukan atau rusak",
+    }
   }
 
   const secretToken = new Uint8Array(Buffer.from(process.env.SECRET_TOKEN!, "base64"));
@@ -107,27 +112,32 @@ export async function AddPendaftarPeriodeSeleksi(periodeSeleksiId: number, data:
     });
 
     return {
+      response: "success",
       name: "peserta:periode-seleksi@daftar",
       message: "Berhasil mendaftar periode seleksi"
     }
   } catch (err) {
-
-    console.log("unknown err \t:", err);
-    return err as Error;
+    const catchedErr = err as Error;
+    console.log("unknown err\t:", err);
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
-export async function GetTerdaftarPeriodeSeleksi(): Promise<number[] | Error> {
+export async function GetTerdaftarPeriodeSeleksi(): Promise<ServerActionResponse<number[]>> {
   const cookieStore = await cookies();
   const token = cookieStore.get("enc-cre");
   if (!token) {
-    const err = new Error(
-      "Sesi anda pada sistem telah habis, silahkan masuk kembali",
-      { cause: "token pengguna tidak ditemukan" }
-    );
-    err.name = "token invalid";
-
-    return err;
+    return {
+      response: "error",
+      name: "Token invalid",
+      message: "Sesi anda pada sistem telah habis, silahkan masuk kembali",
+      cause: "Token pengguna tidak ditemukan atau rusak",
+    }
   }
 
   const secretToken = new Uint8Array(Buffer.from(process.env.SECRET_TOKEN!, "base64"));
@@ -140,30 +150,37 @@ export async function GetTerdaftarPeriodeSeleksi(): Promise<number[] | Error> {
       .from(tablePendaftar)
       .where(eq(tablePendaftar.peserta_id, ID));
 
-    return terdaftarPeriodeSeleksi.map((terdaftar) => {
-      return terdaftar.periode_seleksi_id
-    })
+    return {
+      response: "data",
+      data: terdaftarPeriodeSeleksi.map((terdaftar) => {
+        return terdaftar.periode_seleksi_id
+      })
+    }
   } catch (err) {
-
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
 export async function GetDataStatusTerdaftar(options: {
   query?: string;
   page?: number;
-} = {}): Promise<StatusTerdaftarType[] | Error> {
+} = {}): Promise<ServerActionResponse<StatusTerdaftarType[]>> {
   const cookieStore = await cookies();
   const token = cookieStore.get("enc-cre");
   if (!token) {
-    const err = new Error(
-      "Sesi anda pada sistem telah habis, silahkan masuk kembali",
-      { cause: "token pengguna tidak ditemukan" }
-    );
-    err.name = "token invalid";
-
-    return err;
+    return {
+      response: "error",
+      name: "Token invalid",
+      message: "Sesi anda pada sistem telah habis, silahkan masuk kembali",
+      cause: "Token pengguna tidak ditemukan atau rusak",
+    }
   }
 
   const secretToken = new Uint8Array(Buffer.from(process.env.SECRET_TOKEN!, "base64"));
@@ -183,10 +200,18 @@ export async function GetDataStatusTerdaftar(options: {
       .limit(10)
       .offset(offset);
 
-    return dataTerdaftarPeriodeSeleksi;
+    return {
+      response: "data",
+      data: dataTerdaftarPeriodeSeleksi,
+    }
   } catch (err) {
-
-    console.log("unknown err \t:", err);
-    return err as Error;
+    const catchedErr = err as Error;
+    console.log("unknown err\t:", err);
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }

@@ -39,12 +39,19 @@ export default function DetailSeleksi() {
 
   useEffect(() => {
     (async () => {
-      const data = await GetPeriodeSeleksi({ primaryKey: Number(params.id) });
-      if (data instanceof Error) {
-        return setErr(data);
-      }
+      const req = await GetPeriodeSeleksi({ primaryKey: Number(params.id) });
+      switch (req.response) {
+        case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
 
-      return setPeriodeSeleksi(data.data[0]);
+        case "data":
+          return setPeriodeSeleksi(req.data.arr[0]);
+
+        default:
+          break;
+      }
     })();
   }, []);
   return (

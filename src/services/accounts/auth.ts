@@ -9,6 +9,7 @@ import * as jose from "jose";
 import { cookies } from "next/headers";
 import { AdmSignUpValuesType, SignInValuesType, SignUpValuesType } from "./zod-schema";
 import { redirect } from "next/navigation";
+import { ServerActionResponse } from "../base";
 /**
  * Type
  */
@@ -24,7 +25,7 @@ export type TokenPayload = jose.JWTPayload & {
 /**
  * AuthFn
  */
-export async function SignUp(data: SignUpValuesType): Promise<AuthSuccess | Error> {
+export async function SignUp(data: SignUpValuesType): Promise<ServerActionResponse<unknown>> {
   const check = await db.query.tablePengguna.findFirst({
     columns: {
       email: true
@@ -32,11 +33,12 @@ export async function SignUp(data: SignUpValuesType): Promise<AuthSuccess | Erro
     where: eq(tablePengguna.email, data.email)
   });
   if (check) {
-    const err: Error = new Error("email telah terdaftar, masuk dengan email tersebut atau daftar dengan email lain", {
+    return {
+      response: "error",
+      name: "Duplikasi email",
+      message: "email telah terdaftar, masuk dengan email tersebut atau daftar dengan email lain",
       cause: `"${data.email}" telah digunakan`,
-    });
-    err.name = "duplikasi email";
-    return err;
+    }
   }
 
   const uniqueIdPengguna = uuidv4();
@@ -83,22 +85,24 @@ export async function SignUp(data: SignUpValuesType): Promise<AuthSuccess | Erro
       sameSite: "lax"
     });
 
-    const success: AuthSuccess = {
-      message: "berhasil membuat akun",
-      as: "peserta",
+    return {
+      response: "success",
+      name: "peserta:pengguna@create",
+      message: "Berhasil membuat akun peserta",
     }
-    return success;
   } catch (err) {
-    if (err instanceof Error) {
-      return err;
+    const catchedErr = err as Error;
+    console.log("unknown err\t:", err);
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
     }
-
-    console.info("unknown errors \t:", err);
-    return err as Error;
   }
 }
 
-export async function SignIn(data: SignInValuesType): Promise<AuthSuccess | Error> {
+export async function SignIn(data: SignInValuesType): Promise<ServerActionResponse<"peserta" | "administrator">> {
   try {
     const check = await db.query.tablePengguna.findFirst({
       columns: {
@@ -121,41 +125,35 @@ export async function SignIn(data: SignInValuesType): Promise<AuthSuccess | Erro
       }
     });
     if (!check) {
-      const err = new Error(
-        `Pengguna dengan email ${data.email} tidak ditemukan`,
-        { cause: "email yang digunakan tidak terdaftar pada sistem" }
-      );
-      err.name = "Email tidak terdaftar";
-
-      return err;
+      return {
+        response: "error",
+        name: "Email tidak terdaftar",
+        message: `Pengguna dengan email ${data.email} tidak ditemukan`,
+        cause: "email yang digunakan tidak terdaftar pada sistem"
+      }
     };
     const compare = await bcrypt.compare(data.password, check.password);
     if (!compare) {
-      const err = new Error(
-        "Password yang anda gunakan salah",
-        { cause: "password tidak sesuai dengan sistem" }
-      );
-      err.name = "Kesalahan password";
-
-      return err;
+      return {
+        response: "error",
+        name: "Kesalahan password",
+        message: "Password yang anda gunakan salah",
+        cause: "password tidak sesuai dengan sistem"
+      }
     };
 
     if (!check.administrator && !check.peserta) {
-      const err = new Error(
-        "Akun yang anda gunakan tidak valid, dan tidak memiliki peranan 'peserta' ataupun 'administrator'",
-        { cause: "akun tidak memiliki data 'peserta' maupun 'administrator'" }
-      );
-      err.name = "Akun tidak valid";
-
-      return err
+      return {
+        response: "error",
+        name: "Akun tidak valid",
+        message: "Akun yang anda gunakan tidak valid, dan tidak memiliki peranan 'peserta' ataupun 'administrator'",
+        cause: "Akun tidak memiliki data 'peserta' maupun 'administrator'"
+      }
     }
 
-    const success: AuthSuccess = {
-      message: "auth success",
-      as: "peserta"
-    };
+    let role: "peserta" | "administrator" = "peserta";
     if (check.administrator) {
-      success.as = "administrator";
+      role = "administrator";
     };
 
     const timeExp = new Date(Date.now() + 1 * 60 * 60 * 1000);
@@ -163,7 +161,7 @@ export async function SignIn(data: SignInValuesType): Promise<AuthSuccess | Erro
     const payload: TokenPayload = {
       ID: check.administrator ? check.administrator.id : check.peserta!.id,
       id_pengguna: check.id,
-      as: success.as,
+      as: role,
     };
 
     const encryptToken = await new jose.EncryptJWT(payload)
@@ -179,10 +177,19 @@ export async function SignIn(data: SignInValuesType): Promise<AuthSuccess | Erro
       sameSite: "lax"
     });
 
-    return success;
+    return {
+      response: "data",
+      data: role,
+    }
   } catch (err) {
-    console.log("err signin\t:", err)
-    return err as Error;
+    const catchedErr = err as Error;
+    console.log("unknown err\t:", err);
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 

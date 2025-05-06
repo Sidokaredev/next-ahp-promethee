@@ -103,76 +103,100 @@ export default function ValidasiKriteria({
       }
 
       const change = await ChangeSkalaPerbandingan(Number(params.id), values);
-      if (change instanceof Error) {
-        setLoading(false);
-        return setErr(change);
-      }
+      switch (change.response) {
+        case "error":
+          setLoading(false);
+          const err = new Error(change.message, { cause: change.cause });
+          err.name = change.name;
+          return setErr(err);
 
-      setLoading(false);
-      setEditMatrix(false);
-      setDataSkalaPerbandingan(values);
-      return setNotification({
-        show: true,
-        name: change.name,
-        message: change.message
-      });
+        case "success":
+          setLoading(false);
+          setEditMatrix(false);
+          setDataSkalaPerbandingan(values);
+          return setNotification({
+            show: true,
+            name: change.name,
+            message: change.message
+          });
+
+        default:
+          break;
+      }
     }
 
     const add = await AddSkalaPerbandingan(Number(params.id), formSkalaPerbandingan);
-    if (add instanceof Error) {
+    if (add.response === "error") {
       setLoading(false);
       return setErr(add);
+    } else if (add.response == "success") {
+      const select = await GetSkalaPerbandingan(Number(params.id));
+      switch (select.response) {
+        case "error":
+          setLoading(false);
+          return setErr(select);
+
+        case "data":
+          setLoading(false);
+          setEditMatrix(false);
+          setErr(undefined);
+          setDataSkalaPerbandingan(select.data);
+          return setNotification({
+            show: true,
+            name: add.name,
+            message: add.message
+          });
+
+        default:
+          break;
+      }
     }
-
-    const select = await GetSkalaPerbandingan(Number(params.id));
-    if (select instanceof Error) {
-      setLoading(false);
-      return setErr(select);
-    }
-
-    setLoading(false);
-    setEditMatrix(false);
-    setErr(undefined);
-
-    setDataSkalaPerbandingan(select);
-    return setNotification({
-      show: true,
-      name: add.name,
-      message: add.message
-    });
   }
 
   useEffect(() => {
     // getAll@kriteria
     (async () => {
-      const data = await GetKriteria();
-      if (data instanceof Error) {
-        return setErr(data);
-      }
+      const req = await GetKriteria();
+      switch (req.response) {
+        case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
 
-      return setDataKriteria(data.map(data => {
-        return data.nama;
-      }));
+        case "data":
+          return setDataKriteria(req.data.map(data => data.nama));
+
+        default:
+          break;
+      }
     })();
     // getAll@skala-perbandingan
     (async () => {
-      const data = await GetSkalaPerbandingan(Number(params.id));
-      if (data instanceof Error) {
-        setNotification({
-          show: true,
-          name: data.name,
-          message: data.message,
-        });
-        return setErr(data);
-      }
+      const req = await GetSkalaPerbandingan(Number(params.id));
+      switch (req.response) {
+        case "error":
+          setNotification({
+            show: true,
+            name: req.name,
+            message: req.message,
+          });
 
-      const form: Record<string, string> = {};
-      for (const key in data) {
-        form[key] = data[key].nilai;
-      }
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
 
-      setFormSkalaPerbandingan(form);
-      setDataSkalaPerbandingan(data);
+        case "data":
+          const form: Record<string, string> = {};
+          for (const key in req.data) {
+            form[key] = req.data[key].nilai;
+          }
+
+          setFormSkalaPerbandingan(form);
+          return setDataSkalaPerbandingan(req.data);
+
+        default:
+          break;
+      }
     })();
   }, []);
   return (

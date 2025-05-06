@@ -43,7 +43,6 @@ export default function PesertaLayout({
     }
   });
   const [err, setErr] = useState<Error | null>(null);
-  console.log("err from layout peserta", err);
   const [refetch, setRefetch] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [edit, setEdit] = useState<boolean>(false);
@@ -59,30 +58,44 @@ export default function PesertaLayout({
     setLoading(true);
 
     const change = await ChangeProfilePeserta(formProfile);
-    if (change instanceof Error) {
-      setLoading(false);
-      return setErr(change);
-    }
+    switch (change.response) {
+      case "success":
+        setLoading(false);
+        setEdit(false);
+        setRefetch(prev => !prev);
+        return setNotification({
+          show: true,
+          name: change.name,
+          message: change.message
+        })
 
-    setLoading(false);
-    setEdit(false);
-    setRefetch(prev => !prev);
-    return setNotification({
-      show: true,
-      name: change.name,
-      message: change.message
-    });
+      case "error":
+        setLoading(false);
+        const err = new Error(change.message, { cause: change.cause });
+        err.name = change.name;
+        return setErr(err);
+
+      default:
+        break;
+    }
   }
 
   /* fetching */
   useEffect(() => {
     (async () => {
-      const data = await GetProfilePeserta<ProfilePesertaType>();
-      if (data instanceof Error) {
-        return setErr(data);
-      };
+      const req = await GetProfilePeserta<ProfilePesertaType>();
+      switch (req.response) {
+        case "data":
+          return setProfiles(req.data);
 
-      return setProfiles(data);
+        case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
+
+        default:
+          break;
+      }
     })();
   }, [refetch]);
   return (
@@ -97,41 +110,9 @@ export default function PesertaLayout({
           message={notification.message}
           timeoutS={notification.seconds}
         />
-        {/* comment@breadcrumb */}
-        {/* <div className="mt-5 mb-2">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem className="p-2 rounded-sm">
-                <BreadcrumbLink href="/" className="flex space-x-1.5">
-                  <Home size={20} />
-                  <p className="font-semibold">
-                    Dashboard
-                  </p>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem className="p-2 text-primary rounded-sm">
-                <BreadcrumbLink href="/" className="flex space-x-1.5">
-                  <FileSearch size={20} />
-                  <p className="font-semibold">
-                    Detail Pendaftaran
-                  </p>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div> */}
         <div className="mt-[2em] profile-peserta p-3 bg-white rounded-sm">
           <div className="flex justify-between items-center">
             <div className="flex space-x-3 items-center">
-              {/* comment@avatar-profile */}
-              {/* <Image
-                className="rounded-4xl"
-                src={"https://placehold.co/40x40"}
-                alt="profile-peserta"
-                width={40}
-                height={40}
-              /> */}
               {edit && (
                 <div className="min-w-[20em] grid items-center gap-y-1.5">
                   <Label htmlFor="nama_lengkap" className="text-sm text-gray-400">Nama Lengkap</Label>
@@ -337,26 +318,6 @@ export default function PesertaLayout({
                 </p>
               )}
             </div>
-            {/* comment@email-pengguna */}
-            {/* <div>
-              <p className="mb-1.5 font-semibold text-sm text-gray-400">
-                Email
-              </p>
-              {edit && (
-                <Input
-                  id="email"
-                  type="text"
-                  defaultValue={profiles.pengguna.email}
-                  className="focus-visible:ring-blue-200 focus-visible:border-blue-200 border-blue-200 cursor-not-allowed"
-                  disabled
-                />
-              )}
-              {!edit && (
-                <p className="font-semibold text-sm leading-[1em]">
-                  {profiles.pengguna.email}
-                </p>
-              )}
-            </div> */}
           </div>
         </div>
         {children}

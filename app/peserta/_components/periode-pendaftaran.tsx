@@ -34,45 +34,67 @@ export default function PeriodePendaftaran({
   // handler@onSubmit
   const onSubmit = (form: UseFormReturn<any>) => async (formValues: DaftarPeriodeSeleksiValuesType) => {
     setLoading(true);
+
     const daftar = await AddPendaftarPeriodeSeleksi(selected!.id, formValues);
-    if (daftar instanceof Error) {
-      setLoading(false);
-      return setErr(err);
+    switch (daftar.response) {
+      case "success":
+        form.reset();
+
+        setLoading(false);
+        setOpendDialog(false);
+        setRefetch(prev => !prev);
+        return setNotification({
+          show: true,
+          name: daftar.name,
+          message: daftar.message
+        })
+
+      case "error":
+        setLoading(false);
+        const err = new Error(daftar.message, { cause: daftar.cause });
+        err.name = daftar.name;
+        return setErr(err);
+
+      default:
+        break;
     }
-
-    form.reset()
-
-    setLoading(false);
-    setOpendDialog(false);
-    setRefetch(prev => !prev);
-    setNotification({
-      show: true,
-      name: daftar.name,
-      message: daftar.message,
-    });
   }
 
   /* fetch */
   useEffect(() => {
     // getAll@periode-seleksi
     (async () => {
-      const data = await GetPeriodeSeleksi();
-      if (data instanceof Error) {
-        return setErr(data);
-      }
+      const req = await GetPeriodeSeleksi();
+      switch (req.response) {
+        case "data":
+          return setDataPeriodeSeleksi(req.data);
 
-      return setDataPeriodeSeleksi(data);
+        case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
+
+        default:
+          break;
+      }
     })();
   }, []);
   useEffect(() => {
     // getAll@periode-seleksi[terdaftar]
     (async () => {
-      const data = await GetTerdaftarPeriodeSeleksi();
-      if (data instanceof Error) {
-        return setErr(data);
-      }
+      const req = await GetTerdaftarPeriodeSeleksi();
+      switch (req.response) {
+        case "data":
+          return setTerdaftar(req.data);
 
-      return setTerdaftar(data);
+        case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
+
+        default:
+          break;
+      }
     })();
   }, [refetch]);
   return (

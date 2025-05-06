@@ -13,7 +13,7 @@ import MessageNotification from "@/components/notifications/message";
 import { NotificationType } from "../globals-type";
 import { AddPeriodeSeleksi, ChangePeriodeSeleksi, GetPeriodeSeleksi, PeriodeSeleksiDetailType, PeriodeSeleksiType } from "@/src/services/administrator/periode-seleksi";
 import { PeriodeSeleksiValuesType } from "@/src/services/administrator/zod-schema";
-import { SuccessMessage } from "@/src/services/base";
+import { ServerActionResponse, SuccessMessage } from "@/src/services/base";
 import { UseFormReturn } from "react-hook-form";
 import { formatterDateIndonesian, statuStyler } from "@/lib/utils";
 import { useDebounce } from "use-debounce";
@@ -108,60 +108,74 @@ export default function RiwayatSeleksiPeserta() {
   /* submit@periode-seleksi */
   const onSubmit = (form: UseFormReturn<PeriodeSeleksiValuesType>) => async (formValues: PeriodeSeleksiValuesType) => {
     setLoading(true);
-    let insert: Awaited<SuccessMessage | Error>;
+    let insert: Awaited<ServerActionResponse<unknown>>;
     if (openDialog.change && selected) {
       insert = await ChangePeriodeSeleksi(selected.id, formValues);
     } else {
       insert = await AddPeriodeSeleksi(formValues);
     }
 
-    if (insert instanceof Error) {
-      setLoading(false);
-      return setErr(insert);
-    }
-    setLoading(false);
+    switch (insert.response) {
+      case "error":
+        const err = new Error(insert.message, { cause: insert.cause });
+        err.name = insert.name;
+        setLoading(false);
+        return setErr(insert);
 
-    form.reset();
+      case "success":
+        setLoading(false);
 
-    if (openDialog.change) {
-      setOpenDialog(prev => {
-        return {
-          ...prev,
-          change: false
+        form.reset();
+
+        if (openDialog.change) {
+          setOpenDialog(prev => {
+            return {
+              ...prev,
+              change: false
+            }
+          });
+        } else {
+          setOpenDialog(prev => {
+            return {
+              ...prev,
+              add: false
+            }
+          });
         }
-      });
-    } else {
-      setOpenDialog(prev => {
-        return {
-          ...prev,
-          add: false
-        }
-      });
-    }
-    setRefetch(prev => !prev);
+        setRefetch(prev => !prev);
+        return setTimeout(() => {
+          setNotification({
+            show: true,
+            name: insert.name,
+            message: insert.message,
+          })
+        }, 1000);
 
-    return setTimeout(() => {
-      setNotification({
-        show: true,
-        name: insert.name,
-        message: insert.message,
-      })
-    }, 1000)
+      default:
+        break;
+    };
   };
 
   /* fetch */
   useEffect(() => {
     // get-all@periode-seleksi
     (async () => {
-      const data = await GetPeriodeSeleksi({
+      const req = await GetPeriodeSeleksi({
         query: debouncedQuery,
         page: paginate.current
       });
-      if (data instanceof Error) {
-        return setErr(data);
-      }
+      switch (req.response) {
+        case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
 
-      return setDataPeriodeSeleksi(data)
+        case "data":
+          return setDataPeriodeSeleksi(req.data);
+
+        default:
+          break;
+      }
     })();
   }, [refetch, paginate.current, debouncedQuery]); // default paginate.current
   return (
@@ -215,7 +229,7 @@ export default function RiwayatSeleksiPeserta() {
         </div>
       </div>
       {/* data@periode-seleksi */}
-      {dataPeriodeSeleksi && dataPeriodeSeleksi.data.map((data, idx) => {
+      {dataPeriodeSeleksi && dataPeriodeSeleksi.arr.map((data, idx) => {
         return (
           <div key={idx} className="mb-[0.5em] border border-[#d6ddf7] bg-white rounded-sm">
             <div className="pt-2 pb-2 ps-3 pe-3 flex justify-between items-center">
