@@ -68,7 +68,7 @@ export default function DataAlternatif({
   // state@matrix
   const [deviasi, setDeviasi] = useState<RowMatrixType[]>([]);
   const fetchDeviasi = async (kriteria: string) => {
-    const data = await GetDifferenceMatrix(
+    const req = await GetDifferenceMatrix(
       Number(params.id),
       {
         kriteria: kriteria,
@@ -76,20 +76,25 @@ export default function DataAlternatif({
         kategori: prometheeInitKategori,
       }
     );
-    if (data instanceof Error) {
-      return setNotification({
-        show: true,
-        name: data.name,
-        message: data.message,
-        seconds: 5000
-      })
-    }
+    switch (req.response) {
+      case "error":
+        return setNotification({
+          show: true,
+          name: req.name,
+          message: req.message,
+          seconds: 5000
+        })
 
-    return setDeviasi(data);
+      case "data":
+        return setDeviasi(req.data);
+
+      default:
+        break;
+    }
   };
   const [preferensi, setPreferensi] = useState<RowMatrixType[]>([]);
   const fetchPreferensi = async (kriteria: string) => {
-    const data = await GetPreferenceMatrix(
+    const req = await GetPreferenceMatrix(
       Number(params.id),
       {
         kriteria: kriteria,
@@ -97,16 +102,21 @@ export default function DataAlternatif({
         kategori: prometheeInitKategori,
       }
     );
-    if (data instanceof Error) {
-      return setNotification({
-        show: true,
-        name: data.name,
-        message: data.message,
-        seconds: 5000
-      })
-    }
+    switch (req.response) {
+      case "error":
+        return setNotification({
+          show: true,
+          name: req.name,
+          message: req.message,
+          seconds: 5000
+        })
 
-    return setPreferensi(data);
+      case "data":
+        return setPreferensi(req.data);
+
+      default:
+        break;
+    }
   };
   const [indekPreferensi, setIndekPreferensi] = useState<IndexPreferenceMatrix>([]);
   const [leavingFlow, setLeavingFlow] = useState<{
@@ -118,48 +128,58 @@ export default function DataAlternatif({
     enteringFlow: number;
   }[]>([]);
   const fetchIndekPreferensi = async () => {
-    const data = await GetIndexPreference(
+    const req = await GetIndexPreference(
       Number(params.id),
       {
         keyProps: prometheeInitKeyProps,
         kategori: prometheeInitKategori,
       }
     );
-    if (data instanceof Error) {
-      return setNotification({
-        show: true,
-        name: data.name,
-        message: data.message,
-        seconds: 5000
-      })
-    }
+    switch (req.response) {
+      case "error":
+        return setNotification({
+          show: true,
+          name: req.name,
+          message: req.message,
+          seconds: 5000
+        })
 
-    setLeavingFlow(data.leaving_flow);
-    setEnteringFlow(data.entering_flow);
-    return setIndekPreferensi(data.indek_preferensi);
+      case "data":
+        setLeavingFlow(req.data.leaving_flow);
+        setEnteringFlow(req.data.entering_flow);
+        return setIndekPreferensi(req.data.indek_preferensi);
+
+      default:
+        break;
+    }
   };
   const [netFlow, setNetFlow] = useState<{
     nama: string;
     netFlow: number;
   }[]>([]);
   const fetchNetFlow = async () => {
-    const data = await GetNetFlow(
+    const req = await GetNetFlow(
       Number(params.id),
       {
         keyProps: prometheeInitKeyProps,
         kategori: prometheeInitKategori,
       }
     );
-    if (data instanceof Error) {
-      return setNotification({
-        show: true,
-        name: data.name,
-        message: data.message,
-        seconds: 5000
-      })
-    }
+    switch (req.response) {
+      case "error":
+        return setNotification({
+          show: true,
+          name: req.name,
+          message: req.message,
+          seconds: 5000
+        })
 
-    return setNetFlow(data);
+      case "data":
+        return setNetFlow(req.data);
+
+      default:
+        break;
+    }
   }
 
   // constant@tipe-preferensi
@@ -208,51 +228,62 @@ export default function DataAlternatif({
       }, {} as Record<string, BobotKriteriaType>);
 
       const update = await ChangeBobotKriteria(Number(params.id), formBobotKriteriaWithID);
-      if (update instanceof Error) {
-        setLoading(prev => ({ ...prev, ["bobot_kriteria"]: false }));
-        setNotification({
-          show: true,
-          name: update.name,
-          message: update.message,
-        });
+      switch (update.response) {
+        case "error":
+          setLoading(prev => ({ ...prev, ["bobot_kriteria"]: false }));
+          setNotification({
+            show: true,
+            name: update.name,
+            message: update.message,
+          });
+          const err = new Error(update.message, { cause: update.cause });
+          err.name = update.name;
+          return setErr(err);
 
-        return setErr(update);
+        case "success":
+          setNotification({
+            show: true,
+            name: update.name,
+            message: update.message
+          });
+          setLoading(prev => ({ ...prev, ["bobot_kriteria"]: false }));
+          setErr(undefined);
+          setEdit(prev => ({ ...prev, ["bobot_kriteria"]: false }));
+          return setRefetch(prev => ({ ...prev, ["bobot_kriteria"]: !prev["bobot_kriteria"] }));
+
+        default:
+          break;
       }
-
-      setNotification({
-        show: true,
-        name: update.name,
-        message: update.message
-      });
-
-      setLoading(prev => ({ ...prev, ["bobot_kriteria"]: false }));
-      setErr(undefined);
-      setEdit(prev => ({ ...prev, ["bobot_kriteria"]: false }));
-      return setRefetch(prev => ({ ...prev, ["bobot_kriteria"]: !prev["bobot_kriteria"] }));
     }
 
     const insert = await AddBobotKriteria(Number(params.id), formBobotKriteria);
-    if (insert instanceof Error) {
-      setLoading(prev => ({ ...prev, ["bobot_kriteria"]: false }));
-      setNotification({
-        show: true,
-        name: insert.name,
-        message: insert.message,
-      });
+    switch (insert.response) {
+      case "error":
+        setLoading(prev => ({ ...prev, ["bobot_kriteria"]: false }));
+        setNotification({
+          show: true,
+          name: insert.name,
+          message: insert.message,
+        });
+        const err = new Error(insert.message, { cause: insert.cause });
+        err.name = insert.name;
+        return setErr(err);
 
-      return setErr(insert);
+      case "success":
+        setNotification({
+          show: true,
+          name: insert.name,
+          message: insert.message
+        });
+
+        setLoading(prev => ({ ...prev, ["bobot_kriteria"]: false }));
+        setErr(undefined);
+        setEdit(prev => ({ ...prev, ["bobot_kriteria"]: false }));
+        return setRefetch(prev => ({ ...prev, ["bobot_kriteria"]: !prev["bobot_kriteria"] }));
+
+      default:
+        break;
     }
-
-    setNotification({
-      show: true,
-      name: insert.name,
-      message: insert.message
-    });
-
-    setLoading(prev => ({ ...prev, ["bobot_kriteria"]: false }));
-    setErr(undefined);
-    setEdit(prev => ({ ...prev, ["bobot_kriteria"]: false }));
-    return setRefetch(prev => ({ ...prev, ["bobot_kriteria"]: !prev["bobot_kriteria"] }));
   }
   // onSubmit@fungsi-preferensi
   const addOrChangeFnPreferensi = async () => {
@@ -267,118 +298,156 @@ export default function DataAlternatif({
         return prev;
       }, {} as Record<string, FungsiKriteriaType>);
       const update = await ChangeFnPreferensi(Number(params.id), formFnPreferensiWithID);
-      if (update instanceof Error) {
-        setLoading(prev => ({ ...prev, ["fn_preferensi"]: false }));
-        setNotification({
-          show: true,
-          name: update.name,
-          message: update.message,
-        });
+      switch (update.response) {
+        case "error":
+          setLoading(prev => ({ ...prev, ["fn_preferensi"]: false }));
+          setNotification({
+            show: true,
+            name: update.name,
+            message: update.message,
+          });
+          const err = new Error(update.message, { cause: update.cause });
+          err.name = update.name;
+          return setErr(err);
 
-        return setErr(update);
+        case "success":
+          setNotification({
+            show: true,
+            name: update.name,
+            message: update.message
+          });
+
+          setLoading(prev => ({ ...prev, ["fn_preferensi"]: false }));
+          setErr(undefined);
+          setEdit(prev => ({ ...prev, ["fn_preferensi"]: false }));
+          return setRefetch(prev => ({ ...prev, ["fn_preferensi"]: !prev["fn_preferensi"] }));
+
+        default:
+          break;
       }
-
-      setNotification({
-        show: true,
-        name: update.name,
-        message: update.message
-      });
-
-      setLoading(prev => ({ ...prev, ["fn_preferensi"]: false }));
-      setErr(undefined);
-      setEdit(prev => ({ ...prev, ["fn_preferensi"]: false }));
-      return setRefetch(prev => ({ ...prev, ["fn_preferensi"]: !prev["fn_preferensi"] }));
     }
 
     const insert = await AddFnPreferensi(Number(params.id), formFnPreferensi);
-    if (insert instanceof Error) {
-      setLoading(prev => ({ ...prev, ["fn_preferensi"]: false }));
-      setNotification({
-        show: true,
-        name: insert.name,
-        message: insert.message,
-      });
+    switch (insert.response) {
+      case "error":
+        setLoading(prev => ({ ...prev, ["fn_preferensi"]: false }));
+        setNotification({
+          show: true,
+          name: insert.name,
+          message: insert.message,
+        });
 
-      return setErr(insert);
+        const err = new Error(insert.message, { cause: insert.cause });
+        err.name = insert.name;
+        return setErr(err);
+
+      case "success":
+        setNotification({
+          show: true,
+          name: insert.name,
+          message: insert.message
+        });
+
+        setLoading(prev => ({ ...prev, ["fn_preferensi"]: false }));
+        setErr(undefined);
+        setEdit(prev => ({ ...prev, ["fn_preferensi"]: false }));
+        return setRefetch(prev => ({ ...prev, ["fn_preferensi"]: !prev["fn_preferensi"] }));
+
+      default:
+        break;
     }
-
-    setNotification({
-      show: true,
-      name: insert.name,
-      message: insert.message
-    });
-
-    setLoading(prev => ({ ...prev, ["fn_preferensi"]: false }));
-    setErr(undefined);
-    setEdit(prev => ({ ...prev, ["fn_preferensi"]: false }));
-    return setRefetch(prev => ({ ...prev, ["fn_preferensi"]: !prev["fn_preferensi"] }));
   }
 
   useEffect(() => {
     // getAll@data-alternatif
     (async () => {
-      const data = await GetDataAlternatif({
+      const req = await GetDataAlternatif({
         periodeSeleksiId: Number(params.id),
         query: debouncedQuery,
         page: paginate.current,
       });
 
-      if (data instanceof Error) {
-        return setErr(data);
-      }
+      switch (req.response) {
+        case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
 
-      setTotalDataAlternatif(data.totalData);
-      return setDataAlternatif(data.data);
+        case "data":
+          setTotalDataAlternatif(req.data.totalData);
+          return setDataAlternatif(req.data.arr);
+
+        default:
+          break;
+      }
     })();
   }, [debouncedQuery, paginate.current]);
   useEffect(() => {
     // getAll@kriteria
     (async () => {
-      const data = await GetKriteria();
-      if (data instanceof Error) {
-        setNotification({
-          show: true,
-          name: data.name,
-          message: data.message,
-        });
-        return setErr(data);
-      }
+      const req = await GetKriteria();
+      switch (req.response) {
+        case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
 
-      setKriteria(data);
+        case "data":
+          return setKriteria(req.data);
+
+        default:
+          break;
+      }
     })();
   }, []);
   useEffect(() => {
     // getAll@bobot-kriteria
     (async () => {
-      const data = await GetBobotKriteria(Number(params.id));
-      if (data instanceof Error) {
-        setNotification({
-          show: true,
-          name: data.name,
-          message: data.message
-        })
-        return setErr(data);
-      }
+      const req = await GetBobotKriteria(Number(params.id));
+      switch (req.response) {
+        case "error":
+          setNotification({
+            show: true,
+            name: req.name,
+            message: req.message
+          })
 
-      setFormBobotKriteria(data);
-      setBobotKriteria(data);
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
+
+        case "data":
+          setFormBobotKriteria(req.data);
+          return setBobotKriteria(req.data);
+
+        default:
+          break;
+      }
     })();
   }, [refetch["bobot_kriteria"]]);
   useEffect(() => {
     // getAll@fungsi-preferensi
     (async () => {
-      const data = await GetFungsiPreferensi(Number(params.id));
-      if (data instanceof Error) {
-        setNotification({
-          show: true,
-          name: data.name,
-          message: data.message,
-        });
-        return setErr(data);
-      }
+      const req = await GetFungsiPreferensi(Number(params.id));
+      switch (req.response) {
+        case 'error':
+          setNotification({
+            show: true,
+            name: req.name,
+            message: req.message
+          })
 
-      setFormFnPreferensi(data);;
-      setFnPreferensi(data);
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
+
+        case "data":
+          setFormFnPreferensi(req.data);;
+          return setFnPreferensi(req.data);
+
+        default:
+          break;
+      }
     })();
   }, [refetch["fn_preferensi"]]);
   return (
@@ -427,7 +496,7 @@ export default function DataAlternatif({
                       <Input
                         type="string"
                         disabled={!edit["bobot_kriteria"]}
-                        placeholder="e.g (23.xxx)"
+                        placeholder="e.g (0.xxx)"
                         value={formBobotKriteria[data.nama]?.["nilai"] ?? ""}
                         onChange={(event: ChangeEvent<HTMLInputElement>) => {
                           const value = event.target.value;

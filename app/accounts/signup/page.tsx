@@ -42,11 +42,19 @@ export default function Daftar() {
   const onSubmit = async (formValues: z.infer<typeof SignUpSchema>) => {
     setLoading(true);
     const signup = await SignUp(formValues);
-    if (signup instanceof Error) {
-      setLoading(false);
-      return setErr(signup);
+    switch (signup.response) {
+      case "success":
+        return router.push("/peserta");
+
+      case "error":
+        setLoading(false);
+        const err = new Error(signup.message, { cause: signup.cause });
+        err.name = signup.name;
+        return setErr(err);
+
+      default:
+        break;
     }
-    return router.push("/peserta");
   };
 
   return (

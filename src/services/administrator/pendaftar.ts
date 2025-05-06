@@ -4,6 +4,7 @@ import { tablePendaftarColumns, tablePesertaColumns } from "@/src/databases/mysq
 import { db } from "@/src/databases/mysql/init";
 import { tablePendaftar, tablePengguna, tablePeserta } from "@/src/databases/mysql/schema";
 import { and, desc, eq, like, or } from "drizzle-orm";
+import { ServerActionResponse } from "../base";
 
 /**
  * PendaftarType
@@ -36,7 +37,7 @@ export async function GetDaftarPeserta(options: {
   periodeSeleksiId: number;
   query?: string;
   page?: number;
-}): Promise<{ data: DataPesertaPeriodeSeleksiType[]; totalData: number; } | Error> {
+}): Promise<ServerActionResponse<{ arr: DataPesertaPeriodeSeleksiType[]; totalData: number; }>> {
   try {
     const offset = options.page ? ((options.page * 10) - 10) : 0;
 
@@ -78,13 +79,21 @@ export async function GetDaftarPeserta(options: {
       .offset(offset);
 
     return {
-      data: dataPeserta,
-      totalData: count,
+      response: "data",
+      data: {
+        arr: dataPeserta,
+        totalData: count
+      }
     };
   } catch (err) {
-
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
@@ -92,10 +101,10 @@ export async function GetDataAlternatif(options: {
   periodeSeleksiId: number;
   query?: string;
   page?: number;
-}): Promise<{
-  data: DataAlternatifType[];
+}): Promise<ServerActionResponse<{
+  arr: DataAlternatifType[];
   totalData: number;
-} | Error> {
+}>> {
   try {
     const offset = options.page ? ((10 * options.page) - 10) : 0;
 
@@ -142,32 +151,48 @@ export async function GetDataAlternatif(options: {
     }
 
     return {
-      data: dataAlternatif,
-      totalData: count,
+      response: "data",
+      data: {
+        arr: dataAlternatif,
+        totalData: count,
+      }
     };
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
 export async function UpdateStatusPendaftar(options: {
   id: number,
   status: "diproses" | "diterima";
-}): Promise<PendaftarSuccessOps | Error> {
+}): Promise<ServerActionResponse<unknown>> {
   try {
     await db.update(tablePendaftar).set({ status: options.status }).where(eq(tablePendaftar.id, options.id));
     return {
+      response: "success",
       name: "administrator:pendaftar@update",
       message: "Berhasil mengubah status pendaftar",
     }
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
-export async function GetPendaftarDiterima(periodeSeleksiId: number): Promise<DataAlternatifDiterimaType[] | Error> {
+export async function GetPendaftarDiterima(periodeSeleksiId: number): Promise<ServerActionResponse<DataAlternatifDiterimaType[]>> {
   try {
     const pendaftarDiterima = await db.select({
       id: tablePendaftar.id,
@@ -186,9 +211,18 @@ export async function GetPendaftarDiterima(periodeSeleksiId: number): Promise<Da
       ))
       .orderBy(desc(tablePendaftar.created_at));
 
-    return pendaftarDiterima;
+    return {
+      response: "data",
+      data: pendaftarDiterima
+    }
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }

@@ -36,17 +36,24 @@ export default function Peserta() {
   /* fetch@data-peserta */
   useEffect(() => {
     (async () => {
-      const query = await GetDaftarPeserta({
+      const req = await GetDaftarPeserta({
         periodeSeleksiId: Number(params.id),
         query: debouncedQuery,
         page: paginate.current,
       });
-      if (query instanceof Error) {
-        return setErr(query);
-      }
+      switch (req.response) {
+        case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
 
-      setTotalDataPeserta(query.totalData);
-      return setDataPeserta(query.data);
+        case "data":
+          setTotalDataPeserta(req.data.totalData);
+          return setDataPeserta(req.data.arr);
+
+        default:
+          break;
+      };
     })();
   }, [debouncedQuery, paginate.current]);
   return (

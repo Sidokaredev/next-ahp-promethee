@@ -3,8 +3,9 @@
 import { db } from "@/src/databases/mysql/init"
 import { tableBobotKriteria, tableFungsiPreferensi, tableKriteria, tablePendaftar, tablePeserta, tableSkalaPerbandingan } from "@/src/databases/mysql/schema"
 import { and, desc, eq } from "drizzle-orm";
-import { PrometheeInit, PrometheeUnstable } from "../promethee-algrthm/draft-main";
+import { EnteringFlowType, IndexPreferenceMatrix, LeavingFlowType, NetFlowType, PrometheeInit, PrometheeUnstable, RowMatrixType } from "../promethee-algrthm/draft-main";
 import { prometheeInitKeyFn } from "./constants";
+import { ServerActionResponse } from "../base";
 
 /**
  * Type
@@ -51,18 +52,26 @@ export type RankingAlternatifType = {
  */
 
 /* -> AHP */
-export async function GetKriteria(): Promise<KriteriaType[] | Error> {
+export async function GetKriteria(): Promise<ServerActionResponse<KriteriaType[]>> {
   try {
     const dataKriteria = await db.select({ id: tableKriteria.id, nama: tableKriteria.nama }).from(tableKriteria);
-    return dataKriteria;
+    return {
+      response: 'data',
+      data: dataKriteria,
+    };
   } catch (err) {
-
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
-export async function GetSkalaPerbandingan(periodeSeleksiId: number): Promise<Record<string, SkalaPerbandinganType> | Error> {
+export async function GetSkalaPerbandingan(periodeSeleksiId: number): Promise<ServerActionResponse<Record<string, SkalaPerbandinganType>>> {
   try {
     const dataSkalaPerbandingan = await db.select({
       id: tableSkalaPerbandingan.id,
@@ -71,64 +80,34 @@ export async function GetSkalaPerbandingan(periodeSeleksiId: number): Promise<Re
     }).from(tableSkalaPerbandingan).where(eq(tableSkalaPerbandingan.periode_seleksi_id, periodeSeleksiId));
 
     if (dataSkalaPerbandingan.length == 0) {
-      /*
-      const kriteria = await db.select().from(tableKriteria);
-      if (kriteria.length == 0) {
-        const err = new Error("Data kriteria tidak tersedia, input data kriteria terlebih dahulu", {
-          cause: "data tidak tersedia"
-        });
-        err.name = "Data kriteria tidak tersedia";
-
-        return err;
+      return {
+        response: "error",
+        name: "Data tidak ditemukan",
+        message: "Data skala perbandingan berpasangan tidak ditemukan",
+        cause: "[skala-perbandingan] tidak ditemukan"
       }
-      */
-
-      /*
-      const scaleMatrix = new AHP({
-        criteria: kriteria.map(data => {
-          return data.nama;
-        })
-      }).PairwiseComparisonFields();
-
-      return scaleMatrix.reduce((previous, current) => {
-        current.forEach(matrixRef => {
-          previous[matrixRef] = 0
-        });
-
-        return previous;
-      }, {} as Record<string, number>);
-      */
-
-      // kasih Error aja lah yaw:)
-      const err = new Error("Data skala perbandingan berpasangan tidak ditemukan", {
-        cause: "[skala-perbandingan] tidak ditemukan",
-      });
-      err.name = "Data tidak ditemukan";
-
-      return err;
     }
 
-    /**
-     * Step
-     * 1. Get Kriteria :: string[]
-     * 2. Get Skala Perbandingan :: string[][]
-     * 3. Hitung total skala perbandingan :: string[]
-     * 4. Hitung Normalisasi :: string[][]
-     * 5. Hitung Konsistensi Rasio :: 
-     */
-
-    // console.log("pairwise \t:", dataSkalaPerbandingan.map(data => data.nilai));
-
-    return dataSkalaPerbandingan.reduce((previous, current) => {
-      previous[current.matrix_ref] = current;
-      return previous;
-    }, {} as Record<string, SkalaPerbandinganType>);
+    return {
+      response: 'data',
+      data: dataSkalaPerbandingan.reduce((previous, current) => {
+        previous[current.matrix_ref] = current;
+        return previous;
+      }, {} as Record<string, SkalaPerbandinganType>),
+    };
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
+// PROBABLY UNUSED
 export async function ValidasiKriteriaAHP(periodeSeleksiId: number) {
   try {
     const kriteria = await db.select().from(tableKriteria);
@@ -157,12 +136,18 @@ export async function ValidasiKriteriaAHP(periodeSeleksiId: number) {
 
 
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
-export async function AddSkalaPerbandingan(periodeSeleksiId: number, skalaPerbandinganBerpasangan: Record<string, string>): Promise<DataAlgorithmSuccess | Error> {
+export async function AddSkalaPerbandingan(periodeSeleksiId: number, skalaPerbandinganBerpasangan: Record<string, string>): Promise<ServerActionResponse<unknown>> {
   const values = Object.entries(skalaPerbandinganBerpasangan).map(([key, value]) => {
     return {
       periode_seleksi_id: periodeSeleksiId,
@@ -175,16 +160,23 @@ export async function AddSkalaPerbandingan(periodeSeleksiId: number, skalaPerban
     await db.insert(tableSkalaPerbandingan).values(values);
 
     return {
+      response: "success",
       name: "administrator:skala-perbandingan@add",
       message: "Berhasil menambahkan data skala perbandingan"
     }
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
-export async function ChangeSkalaPerbandingan(periodeSeleksiId: number, skalaPerbandinganBerpasangan: Record<string, SkalaPerbandinganType>): Promise<DataAlgorithmSuccess | Error> {
+export async function ChangeSkalaPerbandingan(periodeSeleksiId: number, skalaPerbandinganBerpasangan: Record<string, SkalaPerbandinganType>): Promise<ServerActionResponse<unknown>> {
   const updatedValues = Object.entries(skalaPerbandinganBerpasangan).map(([key, value]) => {
     return value;
   });
@@ -200,17 +192,24 @@ export async function ChangeSkalaPerbandingan(periodeSeleksiId: number, skalaPer
   try {
     const allUpdates = await Promise.all(updatePromises);
     return {
+      response: "success",
       name: "administrator:skala-perbandingan@change",
       message: `${allUpdates.length} dari ${updatePromises.length} data berhasil diubah`
     };
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
 /* -> Promethee */
-export async function GetBobotKriteria(periodeSeleksiId: number): Promise<Record<string, BobotKriteriaType> | Error> {
+export async function GetBobotKriteria(periodeSeleksiId: number): Promise<ServerActionResponse<Record<string, BobotKriteriaType>>> {
   try {
     const dataBobotKriteria = await db.select({
       id: tableBobotKriteria.id,
@@ -223,28 +222,37 @@ export async function GetBobotKriteria(periodeSeleksiId: number): Promise<Record
       .where(eq(tableBobotKriteria.periode_seleksi_id, periodeSeleksiId));
 
     if (dataBobotKriteria.length == 0) {
-      const err = new Error("Mohon untuk mendefinisikan bobot kriteria terlebih dahulu", {
-        cause: "bobot kriteria tidak tersedia"
-      });
-      err.name = "Bobot kriteria tidak terdefinisi"
-
-      return err;
+      return {
+        response: "error",
+        name: "Bobot kriteria tidak terdefinisi",
+        message: "Mohon untuk mendefinisikan bobot kriteria terlebih dahulu",
+        cause: "Bobot kriteria tidak tersedia"
+      }
     }
-    return dataBobotKriteria.reduce((previous, current) => {
-      previous[current.nama_kriteria] = {
-        id: current.id,
-        kriteria_id: current.kriteria_id,
-        nilai: current.nilai
-      };
-      return previous;
-    }, {} as Record<string, BobotKriteriaType>);
+    return {
+      response: 'data',
+      data: dataBobotKriteria.reduce((previous, current) => {
+        previous[current.nama_kriteria] = {
+          id: current.id,
+          kriteria_id: current.kriteria_id,
+          nilai: current.nilai
+        };
+        return previous;
+      }, {} as Record<string, BobotKriteriaType>),
+    };
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
-export async function GetFungsiPreferensi(periodeSeleksiId: number): Promise<Record<string, FungsiKriteriaType> | Error> {
+export async function GetFungsiPreferensi(periodeSeleksiId: number): Promise<ServerActionResponse<Record<string, FungsiKriteriaType>>> {
   try {
     const dataFnPreferensi = await db.select({
       id: tableFungsiPreferensi.id,
@@ -260,32 +268,41 @@ export async function GetFungsiPreferensi(periodeSeleksiId: number): Promise<Rec
       .where(eq(tableFungsiPreferensi.periode_seleksi_id, periodeSeleksiId));
 
     if (dataFnPreferensi.length == 0) {
-      const err = new Error("Mohon untuk mendefinisikan fungsi preferensi kriteria terlebih dahulu", {
-        cause: "fungsi preferensi tidak tersedia"
-      });
-      err.name = "Fungsi preferensi kriteria tidak terdefinisi"
-
-      return err;
+      return {
+        response: "error",
+        name: "Fungsi preferensi kriteria tidak terdefinisi",
+        message: "Mohon untuk mendefinisikan fungsi preferensi kriteria terlebih dahulu",
+        cause: "Fungsi preferensi tidak tersedia"
+      }
     }
 
-    return dataFnPreferensi.reduce((previous, current) => {
-      previous[current.nama_kriteria] = {
-        id: current.id,
-        kriteria_id: current.kriteria_id,
-        tipe: current.tipe,
-        q: current.q,
-        p: current.p,
-        s: current.s,
-      };
-      return previous;
-    }, {} as Record<string, FungsiKriteriaType>);
+    return {
+      response: "data",
+      data: dataFnPreferensi.reduce((previous, current) => {
+        previous[current.nama_kriteria] = {
+          id: current.id,
+          kriteria_id: current.kriteria_id,
+          tipe: current.tipe,
+          q: current.q,
+          p: current.p,
+          s: current.s,
+        };
+        return previous;
+      }, {} as Record<string, FungsiKriteriaType>),
+    };
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
-export async function AddBobotKriteria(periodeSeleksiId: number, data: Record<string, { kriteria_id: number; nilai: string; }>): Promise<DataAlgorithmSuccess | Error> {
+export async function AddBobotKriteria(periodeSeleksiId: number, data: Record<string, { kriteria_id: number; nilai: string; }>): Promise<ServerActionResponse<unknown>> {
   try {
     const valuesToBeInserted = Object.entries(data).map(([_, value]) => {
       return {
@@ -297,16 +314,23 @@ export async function AddBobotKriteria(periodeSeleksiId: number, data: Record<st
     await db.insert(tableBobotKriteria).values(valuesToBeInserted);
 
     return {
+      response: "success",
       name: "administrator:bobot-kriteria@add",
       message: "Berhasil menambahkan data bobot kriteria",
     }
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
-export async function ChangeBobotKriteria(periodeSeleksiId: number, data: Record<string, BobotKriteriaType>): Promise<DataAlgorithmSuccess | Error> {
+export async function ChangeBobotKriteria(periodeSeleksiId: number, data: Record<string, BobotKriteriaType>): Promise<ServerActionResponse<unknown>> {
   try {
     const updateInPromises = Object.entries(data).map(([_, value]) => {
       return db.update(tableBobotKriteria)
@@ -321,12 +345,19 @@ export async function ChangeBobotKriteria(periodeSeleksiId: number, data: Record
     await Promise.all(updateInPromises);
 
     return {
+      response: "success",
       name: "administrator:bobot-kriteria@change",
       message: "Berhasil mengubah data bobot kriteria"
     }
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
@@ -336,7 +367,7 @@ export async function AddFnPreferensi(periodeSeleksiId: number, data: Record<str
   q: string | null;
   p: string | null;
   s: string | null;
-}>): Promise<DataAlgorithmSuccess | Error> {
+}>): Promise<ServerActionResponse<unknown>> {
   try {
     const valuesToBeInserted = Object.entries(data).map(([_, value]) => {
       return {
@@ -352,16 +383,23 @@ export async function AddFnPreferensi(periodeSeleksiId: number, data: Record<str
     await db.insert(tableFungsiPreferensi).values(valuesToBeInserted);
 
     return {
+      response: "success",
       name: "administrator:fungsi-preferensi@add",
       message: "Berhasil menambahkan data fungsi preferensi"
     }
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
-export async function ChangeFnPreferensi(periodeSeleksiId: number, data: Record<string, FungsiKriteriaType>): Promise<DataAlgorithmSuccess | Error> {
+export async function ChangeFnPreferensi(periodeSeleksiId: number, data: Record<string, FungsiKriteriaType>): Promise<ServerActionResponse<unknown>> {
   try {
     const updateInPromises = Object.entries(data).map(([_, value]) => {
       return db.update(tableFungsiPreferensi).set({
@@ -378,12 +416,19 @@ export async function ChangeFnPreferensi(periodeSeleksiId: number, data: Record<
 
     await Promise.all(updateInPromises);
     return {
+      response: "success",
       name: "administrator:fungsi-preferensi@change",
       message: "Berhasil mengubah data fungsi preferensi"
     }
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
@@ -391,7 +436,7 @@ export async function GetDifferenceMatrix(periodeSeleksiId: number, options: {
   keyProps: Record<string, string>;
   kategori: Record<string, "maksimasi" | "minimasi">;
   kriteria: string;
-}) {
+}): Promise<ServerActionResponse<RowMatrixType[]>> {
   try {
     const bobotKriteria = await db.select({
       id: tableBobotKriteria.id,
@@ -403,10 +448,12 @@ export async function GetDifferenceMatrix(periodeSeleksiId: number, options: {
       .where(eq(tableBobotKriteria.periode_seleksi_id, periodeSeleksiId));
 
     if (bobotKriteria.length == 0) {
-      const err = new Error("Anda belum mendefinisikan bobot kriteria, input data terlebih dahulu", { cause: "bobot kriteria tidak terdefinisi" });
-      err.name = "bobot kriteria tidak ditemukan";
-
-      return err;
+      return {
+        response: "error",
+        name: "Bobot kriteria tidak ditemukan",
+        message: "Anda belum mendefinisikan bobot kriteria, input data terlebih dahulu",
+        cause: "Bobot kriteria tidak terdefinisi"
+      }
     }
 
     const fnPreferensi = await db.select({
@@ -422,10 +469,12 @@ export async function GetDifferenceMatrix(periodeSeleksiId: number, options: {
       .where(eq(tableFungsiPreferensi.periode_seleksi_id, periodeSeleksiId));
 
     if (fnPreferensi.length == 0) {
-      const err = new Error("Anda belum mendefinisikan tipe fungsi preferensi untuk setiap kriteria, input data terlebih dahulu", { cause: "tipe fungsi preferensi tidak terdefinisi" });
-      err.name = "tipe fungsi preferensi tidak ditemukan";
-
-      return err;
+      return {
+        response: "error",
+        name: "Tipe fungsi preferensi tidak ditemukan",
+        message: "Anda belum mendefinisikan tipe fungsi preferensi untuk setiap kriteria, input data terlebih dahulu",
+        cause: "Tipe fungsi preferensi tidak terdefinisi"
+      }
     }
 
     const alternatif = await db.select({
@@ -480,10 +529,19 @@ export async function GetDifferenceMatrix(periodeSeleksiId: number, options: {
       }
     });
     const prometheeInstance = new PrometheeUnstable(alternatif, prometheeInit);
-    return prometheeInstance.ScoreDifferenceMatrix()[options.kriteria];
+    return {
+      response: "data",
+      data: prometheeInstance.ScoreDifferenceMatrix()[options.kriteria],
+    };
   } catch (err) {
-    console.info("unknown err\t:", err);
-    return err as Error;
+    const catchedErr = err as Error;
+    console.log("unknown err\t:", err);
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
@@ -491,7 +549,7 @@ export async function GetPreferenceMatrix(periodeSeleksiId: number, options: {
   keyProps: Record<string, string>;
   kategori: Record<string, "maksimasi" | "minimasi">;
   kriteria: string;
-}) {
+}): Promise<ServerActionResponse<RowMatrixType[]>> {
   try {
     const bobotKriteria = await db.select({
       id: tableBobotKriteria.id,
@@ -503,10 +561,12 @@ export async function GetPreferenceMatrix(periodeSeleksiId: number, options: {
       .where(eq(tableBobotKriteria.periode_seleksi_id, periodeSeleksiId));
 
     if (bobotKriteria.length == 0) {
-      const err = new Error("Anda belum mendefinisikan bobot kriteria, input data terlebih dahulu", { cause: "bobot kriteria tidak terdefinisi" });
-      err.name = "bobot kriteria tidak ditemukan";
-
-      return err;
+      return {
+        response: "error",
+        name: "Bobot kriteria tidak ditemukan",
+        message: "Anda belum mendefinisikan bobot kriteria, input data terlebih dahulu",
+        cause: "Bobot kriteria tidak terdefinisi"
+      }
     }
 
     const fnPreferensi = await db.select({
@@ -522,10 +582,12 @@ export async function GetPreferenceMatrix(periodeSeleksiId: number, options: {
       .where(eq(tableFungsiPreferensi.periode_seleksi_id, periodeSeleksiId));
 
     if (fnPreferensi.length == 0) {
-      const err = new Error("Anda belum mendefinisikan tipe fungsi preferensi untuk setiap kriteria, input data terlebih dahulu", { cause: "tipe fungsi preferensi tidak terdefinisi" });
-      err.name = "tipe fungsi preferensi tidak ditemukan";
-
-      return err;
+      return {
+        response: "error",
+        name: "Tipe fungsi preferensi tidak ditemukan",
+        message: "Anda belum mendefinisikan tipe fungsi preferensi untuk setiap kriteria, input data terlebih dahulu",
+        cause: "Tipe fungsi preferensi tidak terdefinisi"
+      }
     }
 
     const alternatif = await db.select({
@@ -580,17 +642,30 @@ export async function GetPreferenceMatrix(periodeSeleksiId: number, options: {
       }
     });
     const prometheeInstance = new PrometheeUnstable(alternatif, prometheeInit);
-    return prometheeInstance.ScoreFnPreferenceMatrix(prometheeInstance.ScoreDifferenceMatrix())[options.kriteria];
+    return {
+      response: "data",
+      data: prometheeInstance.ScoreFnPreferenceMatrix(prometheeInstance.ScoreDifferenceMatrix())[options.kriteria],
+    };
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
 export async function GetIndexPreference(periodeSeleksiId: number, options: {
   keyProps: Record<string, string>;
   kategori: Record<string, "maksimasi" | "minimasi">;
-}) {
+}): Promise<ServerActionResponse<{
+  indek_preferensi: IndexPreferenceMatrix,
+  leaving_flow: LeavingFlowType,
+  entering_flow: EnteringFlowType,
+}>> {
   try {
     const bobotKriteria = await db.select({
       id: tableBobotKriteria.id,
@@ -602,10 +677,12 @@ export async function GetIndexPreference(periodeSeleksiId: number, options: {
       .where(eq(tableBobotKriteria.periode_seleksi_id, periodeSeleksiId));
 
     if (bobotKriteria.length == 0) {
-      const err = new Error("Anda belum mendefinisikan bobot kriteria, input data terlebih dahulu", { cause: "bobot kriteria tidak terdefinisi" });
-      err.name = "bobot kriteria tidak ditemukan";
-
-      return err;
+      return {
+        response: "error",
+        name: "Bobot kriteria tidak ditemukan",
+        message: "Anda belum mendefinisikan bobot kriteria, input data terlebih dahulu",
+        cause: "Bobot kriteria tidak terdefinisi"
+      }
     }
 
     const fnPreferensi = await db.select({
@@ -621,10 +698,12 @@ export async function GetIndexPreference(periodeSeleksiId: number, options: {
       .where(eq(tableFungsiPreferensi.periode_seleksi_id, periodeSeleksiId));
 
     if (fnPreferensi.length == 0) {
-      const err = new Error("Anda belum mendefinisikan tipe fungsi preferensi untuk setiap kriteria, input data terlebih dahulu", { cause: "tipe fungsi preferensi tidak terdefinisi" });
-      err.name = "tipe fungsi preferensi tidak ditemukan";
-
-      return err;
+      return {
+        response: "error",
+        name: "Tipe fungsi preferensi tidak ditemukan",
+        message: "Anda belum mendefinisikan tipe fungsi preferensi untuk setiap kriteria, input data terlebih dahulu",
+        cause: "Tipe fungsi preferensi tidak terdefinisi"
+      }
     }
 
     const alternatif = await db.select({
@@ -684,20 +763,29 @@ export async function GetIndexPreference(periodeSeleksiId: number, options: {
     const leavingFlow = prometheeInstance.ScoreLeavingFlow(preferenceIndex);
     const enteringFlow = prometheeInstance.ScoreEnteringFlow(preferenceIndex);
     return {
-      indek_preferensi: preferenceIndex,
-      leaving_flow: leavingFlow,
-      entering_flow: enteringFlow,
+      response: "data",
+      data: {
+        indek_preferensi: preferenceIndex,
+        leaving_flow: leavingFlow,
+        entering_flow: enteringFlow,
+      }
     };
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
 export async function GetNetFlow(periodeSeleksiId: number, options: {
   keyProps: Record<string, string>;
   kategori: Record<string, "maksimasi" | "minimasi">;
-}) {
+}): Promise<ServerActionResponse<NetFlowType>> {
   try {
     const bobotKriteria = await db.select({
       id: tableBobotKriteria.id,
@@ -709,10 +797,12 @@ export async function GetNetFlow(periodeSeleksiId: number, options: {
       .where(eq(tableBobotKriteria.periode_seleksi_id, periodeSeleksiId));
 
     if (bobotKriteria.length == 0) {
-      const err = new Error("Anda belum mendefinisikan bobot kriteria, input data terlebih dahulu", { cause: "bobot kriteria tidak terdefinisi" });
-      err.name = "bobot kriteria tidak ditemukan";
-
-      return err;
+      return {
+        response: "error",
+        name: "Bobot kriteria tidak ditemukan",
+        message: "Anda belum mendefinisikan bobot kriteria, input data terlebih dahulu",
+        cause: "Bobot kriteria tidak terdefinisi"
+      }
     }
 
     const fnPreferensi = await db.select({
@@ -728,10 +818,12 @@ export async function GetNetFlow(periodeSeleksiId: number, options: {
       .where(eq(tableFungsiPreferensi.periode_seleksi_id, periodeSeleksiId));
 
     if (fnPreferensi.length == 0) {
-      const err = new Error("Anda belum mendefinisikan tipe fungsi preferensi untuk setiap kriteria, input data terlebih dahulu", { cause: "tipe fungsi preferensi tidak terdefinisi" });
-      err.name = "tipe fungsi preferensi tidak ditemukan";
-
-      return err;
+      return {
+        response: "error",
+        name: "Tipe fungsi preferensi tidak ditemukan",
+        message: "Anda belum mendefinisikan tipe fungsi preferensi untuk setiap kriteria, input data terlebih dahulu",
+        cause: "Tipe fungsi preferensi tidak terdefinisi"
+      }
     }
 
     const alternatif = await db.select({
@@ -790,17 +882,26 @@ export async function GetNetFlow(periodeSeleksiId: number, options: {
     const preferenceIndex = prometheeInstance.ScorePreferenceIndex(preferenceMatrix);
     const leavingFlow = prometheeInstance.ScoreLeavingFlow(preferenceIndex);
     const enteringFlow = prometheeInstance.ScoreEnteringFlow(preferenceIndex);
-    return prometheeInstance.ScoreNetFlow(leavingFlow, enteringFlow);
+    return {
+      response: "data",
+      data: prometheeInstance.ScoreNetFlow(leavingFlow, enteringFlow),
+    };
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }
 
 export async function GetPemeringkatan(periodeSeleksiId: number, options: {
   keyProps: Record<string, string>;
   kategori: Record<string, "maksimasi" | "minimasi">;
-}) {
+}): Promise<ServerActionResponse<RankingAlternatifType[]>> {
   try {
     const bobotKriteria = await db.select({
       id: tableBobotKriteria.id,
@@ -812,10 +913,12 @@ export async function GetPemeringkatan(periodeSeleksiId: number, options: {
       .where(eq(tableBobotKriteria.periode_seleksi_id, periodeSeleksiId));
 
     if (bobotKriteria.length == 0) {
-      const err = new Error("Anda belum mendefinisikan bobot kriteria, input data terlebih dahulu", { cause: "bobot kriteria tidak terdefinisi" });
-      err.name = "bobot kriteria tidak ditemukan";
-
-      return err;
+      return {
+        response: "error",
+        name: "Bobot kriteria tidak ditemukan",
+        message: "Anda belum mendefinisikan bobot kriteria, input data terlebih dahulu",
+        cause: "Bobot kriteria tidak terdefinisi"
+      }
     }
 
     const fnPreferensi = await db.select({
@@ -831,10 +934,12 @@ export async function GetPemeringkatan(periodeSeleksiId: number, options: {
       .where(eq(tableFungsiPreferensi.periode_seleksi_id, periodeSeleksiId));
 
     if (fnPreferensi.length == 0) {
-      const err = new Error("Anda belum mendefinisikan tipe fungsi preferensi untuk setiap kriteria, input data terlebih dahulu", { cause: "tipe fungsi preferensi tidak terdefinisi" });
-      err.name = "tipe fungsi preferensi tidak ditemukan";
-
-      return err;
+      return {
+        response: "error",
+        name: "Tipe fungsi preferensi tidak ditemukan",
+        message: "Anda belum mendefinisikan tipe fungsi preferensi untuk setiap kriteria, input data terlebih dahulu",
+        cause: "Tipe fungsi preferensi tidak terdefinisi"
+      }
     }
 
     const alternatif = await db.select({
@@ -915,9 +1020,18 @@ export async function GetPemeringkatan(periodeSeleksiId: number, options: {
       })
     });
 
-    return rankedAlternatif;
+    return {
+      response: "data",
+      data: rankedAlternatif
+    };
   } catch (err) {
+    const catchedErr = err as Error;
     console.log("unknown err\t:", err);
-    return err as Error;
+    return {
+      response: "error",
+      name: catchedErr.name,
+      message: catchedErr.message,
+      cause: catchedErr.cause as string,
+    }
   }
 }

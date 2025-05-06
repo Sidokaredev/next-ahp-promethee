@@ -14,6 +14,23 @@ export type SuccessMessage = {
   name: string;
   message: string;
 }
+type SuccessResponse = {
+  response: "success";
+  name: string;
+  message: string;
+}
+type DataResponse<T> = {
+  response: "data";
+  data: T;
+}
+type FailResponse = {
+  response: "error";
+  name: string;
+  message: string;
+  cause: string;
+}
+export type ServerActionResponse<T> = SuccessResponse | DataResponse<T> | FailResponse;
+
 /**
  * Base Server Action
  */

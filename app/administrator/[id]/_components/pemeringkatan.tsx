@@ -53,60 +53,76 @@ export default function Pemeringkatan({
       id: selectedRanking?.id as number,
       status: "diterima",
     });
-    if (update instanceof Error) {
-      setLoading(false);
-      return setNotification({
-        show: true,
-        name: update.name,
-        message: update.message,
-      })
-    }
 
-    setLoading(false);
-    setOpen(prev => ({
-      ...prev,
-      ["dialog"]: false,
-    }));
-    setRefetch(prev => !prev);
-    return setNotification({
-      show: true,
-      name: update.name,
-      message: update.message,
-    })
+    switch (update.response) {
+      case "error":
+        setLoading(false);
+        return setNotification({
+          show: true,
+          name: update.name,
+          message: update.message,
+        });
+
+      case "success":
+        setLoading(false);
+        setOpen(prev => ({
+          ...prev,
+          ["dialog"]: false,
+        }));
+        setRefetch(prev => !prev);
+        return setNotification({
+          show: true,
+          name: update.name,
+          message: update.message,
+        })
+
+      default:
+        break;
+    }
   }
 
   useEffect(() => {
     (async () => {
-      const data = await GetPemeringkatan(
+      const req = await GetPemeringkatan(
         Number(params.id),
         {
           keyProps: prometheeInitKeyProps,
           kategori: prometheeInitKategori,
         }
       );
-      if (data instanceof Error) {
-        return setNotification({
-          show: true,
-          name: data.name,
-          message: data.message,
-        })
-      }
+      switch (req.response) {
+        case "error":
+          return setNotification({
+            show: true,
+            name: req.name,
+            message: req.message,
+          })
 
-      setRanking(data);
+        case "data":
+          return setRanking(req.data);
+
+        default:
+          break;
+      }
     })();
   }, []);
   useEffect(() => {
     (async () => {
-      const data = await GetPendaftarDiterima(Number(params.id));
-      if (data instanceof Error) {
-        return setNotification({
-          show: true,
-          name: data.name,
-          message: data.message,
-        })
-      }
+      const req = await GetPendaftarDiterima(Number(params.id));
+      switch (req.response) {
+        case "error":
+          return setNotification({
+            show: true,
+            name: req.name,
+            message: req.message,
+          })
 
-      setPesertaDiterima(data.map(alt => alt.id));
+        case "data":
+          return setPesertaDiterima(req.data.map(alt => alt.id));
+
+        default:
+          break;
+      }
     })();
   }, [refetch]);
   return (

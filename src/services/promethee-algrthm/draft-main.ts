@@ -63,6 +63,21 @@ export type IndexPreferenceMatrix = {
     aggregated: number;
   }[]
 }[];
+export type LeavingFlowType = {
+  id: number;
+  nama: string;
+  leavingFlow: number;
+}[];
+export type EnteringFlowType = {
+  id: number;
+  nama: string;
+  enteringFlow: number;
+}[];
+export type NetFlowType = {
+  id: number;
+  nama: string;
+  netFlow: number;
+}[];
 
 export class PrometheeUnstable {
   // props
