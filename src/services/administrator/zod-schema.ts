@@ -4,6 +4,7 @@ import { z } from "zod";
  * Type
  */
 export type PeriodeSeleksiValuesType = z.infer<typeof PeriodeSeleksiSchema>;
+export type SkorProgramStudiValuesType = z.infer<typeof SkorProgramStudiSchema>;
 /**
  * Schema
  */
@@ -29,4 +30,10 @@ export const BobotKriteriaSchema = z.object({
 }, {
   path: ["form"],
   message: "Total dari nilai bobot keseluruhan harus == 1"
+})
+
+export const SkorProgramStudiSchema = z.object({
+  id: z.number().nullable().optional(),
+  skor: z.number().gt(0, { message: "nilai 1 - 10" }),
+  program_studi_id: z.number().positive({ message: "harap pilih program studi terlebih dahulu" }),
 })

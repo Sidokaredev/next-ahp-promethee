@@ -115,6 +115,7 @@ export const tablePeriodeSeleksiRelations = relations(tablePeriodeSeleksi, ({ ma
   return {
     pendaftar: many(tablePendaftar),
     bobot_kriteria: many(tableBobotKriteria),
+    skor_program_studi: many(tableSkorProgramStudi),
   }
 });
 
@@ -253,9 +254,9 @@ export const tableBobotKriteriaRelations = relations(tableBobotKriteria, ({ one 
 export const tableFungsiPreferensi = mysqlTable("fungsi_preferensi", {
   id: type.int().primaryKey().autoincrement(),
   tipe: type.varchar({ length: 256 }).notNull(),
-  q: type.decimal(),
-  p: type.decimal(),
-  s: type.decimal(),
+  q: type.decimal({ precision: 4, scale: 2 }),
+  p: type.decimal({ precision: 4, scale: 2 }),
+  s: type.decimal({ precision: 4, scale: 2 }),
   kriteria_id: type.int().notNull(),
   periode_seleksi_id: type.bigint({ mode: "number" }).notNull(),
   ...timestamps,
@@ -285,3 +286,73 @@ export const tableFungsiPreferensiRelations = relations(tableFungsiPreferensi, (
   }
 })
 
+export const tableBidangIlmu = mysqlTable("bidang_ilmu", {
+  id: type.int().primaryKey().autoincrement(),
+  nama: type.varchar({ length: 512 }).notNull(),
+  ...timestamps,
+})
+
+export const tableBidangIlmuRelations = relations(tableBidangIlmu, ({ many }) => {
+  return {
+    program_studi: many(tableProgramStudi),
+  }
+})
+
+export const tableProgramStudi = mysqlTable("program_studi", {
+  id: type.int().primaryKey().autoincrement(),
+  nama: type.varchar({ length: 1024 }).notNull(),
+  bidang_ilmu_id: type.int().notNull(),
+  ...timestamps,
+}, (table) => {
+  return [
+    foreignKey({
+      columns: [table.bidang_ilmu_id],
+      foreignColumns: [tableBidangIlmu.id],
+      name: "fk_program_studi_bidang_ilmu"
+    })
+  ]
+})
+
+export const tableProgramStudiRelations = relations(tableProgramStudi, ({ one, many }) => {
+  return {
+    bidang_ilmu: one(tableBidangIlmu, {
+      fields: [tableProgramStudi.bidang_ilmu_id],
+      references: [tableBidangIlmu.id],
+    }),
+    skor_program_studi: many(tableSkorProgramStudi),
+  }
+})
+
+export const tableSkorProgramStudi = mysqlTable("skor_program_studi", {
+  id: type.int().primaryKey().autoincrement(),
+  skor: type.int().notNull(),
+  program_studi_id: type.int().notNull(),
+  periode_seleksi_id: type.bigint({ mode: "number" }).notNull(),
+  ...timestamps,
+}, (table) => {
+  return [
+    foreignKey({
+      columns: [table.program_studi_id],
+      foreignColumns: [tableProgramStudi.id],
+      name: "fk_skor_program_studi_program_studi"
+    }),
+    foreignKey({
+      columns: [table.periode_seleksi_id],
+      foreignColumns: [tablePeriodeSeleksi.id],
+      name: "fk_skor_program_studi_periode_seleksi"
+    })
+  ]
+})
+
+export const tableSkorProgramStudiRelations = relations(tableSkorProgramStudi, ({ one }) => {
+  return {
+    program_studi: one(tableProgramStudi, {
+      fields: [tableSkorProgramStudi.program_studi_id],
+      references: [tableProgramStudi.id]
+    }),
+    periode_seleksi: one(tablePeriodeSeleksi, {
+      fields: [tableSkorProgramStudi.periode_seleksi_id],
+      references: [tablePeriodeSeleksi.id],
+    })
+  }
+})

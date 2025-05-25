@@ -14,11 +14,12 @@ import { AddBobotKriteria, AddFnPreferensi, BobotKriteriaType, ChangeBobotKriter
 import { DataAlternatifType, GetDataAlternatif } from "@/src/services/administrator/pendaftar"
 import { BobotKriteriaSchema } from "@/src/services/administrator/zod-schema";
 import { IndexPreferenceMatrix, PrometheeUnstable, RowMatrixType } from "@/src/services/promethee-algrthm/draft-main";
-import { Ban, ChevronsUpDown, CloudAlert, Pencil, Search, X } from "lucide-react";
+import { Ban, Check, ChevronsUpDown, CloudAlert, MoreVertical, Pencil, Plus, Search, X } from "lucide-react";
 import { useParams } from "next/navigation";
 import { ChangeEvent, SetStateAction, useEffect, useState } from "react"
 import { InlineMath } from "react-katex";
 import { useDebounce } from "use-debounce";
+import DaftarSkorJurusan from "./informasi-perangkingan/daftar-jurusan";
 
 export default function DataAlternatif({
   setNotification,
@@ -34,7 +35,36 @@ export default function DataAlternatif({
   const [formBobotKriteria, setFormBobotKriteria] = useState<Record<string, { kriteria_id: number; nilai: string; }>>({});
   // state@fungsi-preferensi
   const [fnPreferensi, setFnPreferensi] = useState<Record<string, FungsiKriteriaType>>({});
-  const [formFnPreferensi, setFormFnPreferensi] = useState<Record<string, { kriteria_id: number; tipe: string; q: string | null; p: string | null; s: string | null; }>>({});
+  const [formFnPreferensi, setFormFnPreferensi] = useState<Record<string, { kriteria_id: number; tipe: string; q: string | null; p: string | null; s: string | null; }>>({
+    "Indeks Prestasi Kumulatif (IPK)": {
+      kriteria_id: 1,
+      tipe: "Tipe III",
+      q: null,
+      p: "",
+      s: null
+    },
+    "Semester": {
+      kriteria_id: 2,
+      tipe: "Tipe III",
+      q: null,
+      p: "",
+      s: null
+    },
+    "Jurusan": {
+      kriteria_id: 3,
+      tipe: "Tipe III",
+      q: null,
+      p: "",
+      s: null
+    },
+    "Akreditasi Perguruan Tinggi": {
+      kriteria_id: 4,
+      tipe: "Tipe III",
+      q: null,
+      p: "",
+      s: null
+    }
+  });
   // state@manipulate
   const [edit, setEdit] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState<Record<string, boolean>>({});
@@ -442,7 +472,8 @@ export default function DataAlternatif({
           return setErr(err);
 
         case "data":
-          setFormFnPreferensi(req.data);;
+          setFormFnPreferensi(req.data);
+          console.log(req.data);
           return setFnPreferensi(req.data);
 
         default:
@@ -454,17 +485,23 @@ export default function DataAlternatif({
     <div className="">
       {/* message@error */}
       {err && (
-        <Alert className="mt-2 mb-2 pt-2 pb-2 ps-4 pe-4 bg-red-100 text-red-500 border-0">
-          <CloudAlert />
-          <AlertTitle className="text-sm">
+        <div className="m-3 pt-2 pb-2 ps-3 pe-3 flex gap-x-3 bg-red-50 border border-red-200 rounded-sm">
+          <CloudAlert className="text-red-500" />
+          <p className="font-bold text-base text-red-500">
             {err.name}
-          </AlertTitle>
-          <AlertDescription className="text-sm text-red-500">
-            {err.message}
-          </AlertDescription>
-        </Alert>
+            <br />
+            <span className="font-normal text-sm text-gray-600">
+              {err.message}
+            </span>
+          </p>
+        </div>
       )}
-      <div className="mt-[1.5em] mb-[1em] pengaturan p-2">
+      <DaftarSkorJurusan
+        periodeSeleksiId={Number(params.id)}
+        setNotification={setNotification}
+        setErr={setErr}
+      />
+      <div className="mb-[1em] pengaturan p-2">
         <div className="flex gap-x-[2%] font-semibold text-sm text-gray-600">
           <div className="bobot-kriteria basis-[49%]">
             <p className="mb-2 text-base">
@@ -608,7 +645,7 @@ export default function DataAlternatif({
                     </div>
                     <div className="basis-[70%] p-3 font-normal">
                       <Select
-                        disabled={!edit["fn_preferensi"]}
+                        disabled
                         onValueChange={(value: string) => {
                           setFormFnPreferensi(prev => ({ ...prev, [data.nama]: { ...prev[data.nama], kriteria_id: data.id, tipe: value } }));
                         }}
@@ -714,7 +751,7 @@ export default function DataAlternatif({
                 <Button size={"sm"} className="cursor-pointer"
                   variant={'secondary'}
                   onClick={() => {
-                    setFormFnPreferensi(fnPreferensi);
+                    // setFormFnPreferensi(fnPreferensi);
                     setEdit(prev => ({
                       ...prev,
                       ["fn_preferensi"]: false,
@@ -742,7 +779,7 @@ export default function DataAlternatif({
                   }}
                 >
                   <Pencil />
-                  Edit Fungsi Preferensi
+                  Ubah nilai preferensi
                 </Button>
               </div>
             )}

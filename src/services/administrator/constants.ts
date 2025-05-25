@@ -15,15 +15,26 @@ export const prometheeInitKategori: Record<string, "maksimasi" | "minimasi"> = {
   "Jurusan": "maksimasi",
   "Akreditasi Perguruan Tinggi": "maksimasi"
 }
-export const prometheeInitKeyFn: Record<string, (data: unknown) => number> = {
+
+export type KeyFunction =
+  | ((data: unknown) => number)
+  | ((data: unknown, recordSkorProgramStudi: Record<string, number>) => number);
+type PrometheeKey =
+  | "Indeks Prestasi Kumulatif (IPK)"
+  | "Jurusan"
+  | "Akreditasi Perguruan Tinggi";
+
+export const prometheeInitKeyFn: Record<PrometheeKey, KeyFunction> = {
   "Indeks Prestasi Kumulatif (IPK)": (data: unknown): number => Number(data),
-  "Jurusan": (data: unknown): number => {
-    return preferensiJurusan.includes(data as string) ? 1 : 0;
+  "Jurusan": (data: unknown, recordSkorProgramStudi: Record<string, number>): number => {
+    // return preferensiJurusan.includes(data as string) ? 1 : 0;
+    return recordSkorProgramStudi[data as string] ? recordSkorProgramStudi[data as string] : 0;
   },
   "Akreditasi Perguruan Tinggi": (data: unknown): number => {
     return akreditasiScore[data as string];
   },
 }
+
 export const prometheeInitFnPreferensi: Record<string, FnPreferensiType> = {
   "Indeks Prestasi Kumulatif (IPK)": {
     tipe: "Tipe III",

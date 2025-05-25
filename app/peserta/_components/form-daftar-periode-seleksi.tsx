@@ -224,7 +224,7 @@ export default function FormDaftarPeriodeSeleksi({
               type="submit"
               form="form-daftar"
               size={"sm"}
-              className="min-w-[8em]"
+              className="min-w-[8em] cursor-pointer"
               disabled={loading}
             >
               Submit

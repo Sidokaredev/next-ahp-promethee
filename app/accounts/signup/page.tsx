@@ -5,9 +5,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MessageCircleX, UserRoundPlus } from "lucide-react";
+import { Check, ChevronsUpDown, MessageCircleX, UserRoundPlus } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, useState } from "react";
+import { ChangeEvent, useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { Separator } from "@/components/ui/separator";
@@ -16,11 +16,19 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { SignUpSchema } from "@/src/services/accounts/zod-schema";
 import { CheckedState } from "@radix-ui/react-checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { BidangIlmuGet, BidangIlmuType, ProgramStudiGet, ProgramStudiType } from "@/src/services/administrator/program-studi-datasource";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { cn } from "@/lib/utils";
 
 export default function Daftar() {
   /* hook */
   const router = useRouter();
   /* state */
+  const [bidangIlmu, setBidangIlmu] = useState<BidangIlmuType[]>([]);
+  const [selectedBidangIlmu, setSelectedBidangIlmu] = useState<number>(1);
+  const [programStudi, setProgramStudi] = useState<ProgramStudiType[]>([]);
+  const [openProgramStudi, setOpenProgramStudi] = useState<boolean>(false);
   const [show, setShow] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [err, setErr] = useState<Error | null>(null);
@@ -57,6 +65,45 @@ export default function Daftar() {
     }
   };
 
+  useEffect(() => {
+    // getAll@bidang-ilmu
+    (async () => {
+      const req = await BidangIlmuGet();
+      switch (req.response) {
+        case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
+
+        case "data":
+          return setBidangIlmu(req.data);
+
+        default:
+          break;
+      }
+    })();
+  }, []);
+  useEffect(() => {
+    // getAll@program-studi
+    (async () => {
+      const req = await ProgramStudiGet({
+        bidang_ilmu_id: selectedBidangIlmu
+      });
+
+      switch (req.response) {
+        case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          return setErr(err);
+
+        case "data":
+          return setProgramStudi(req.data);
+
+        default:
+          break;
+      }
+    })();
+  }, [selectedBidangIlmu]);
   return (
     <div className="max-w-2xl w-full ps-[1.5em] pe-[1.5em] pt-[1.5em] pb-[1.5em] bg-white rounded-sm">
       <div className="w-full mx-auto">
@@ -90,7 +137,7 @@ export default function Daftar() {
                 name="nama_lengkap"
                 render={({ field }) => {
                   return (
-                    <FormItem className="mb-[0.5em] col-span-2">
+                    <FormItem className="mb-[0.5em]">
                       <FormLabel className="text-gray-600">Nama lengkap</FormLabel>
                       <FormControl>
                         <Input
@@ -152,26 +199,6 @@ export default function Daftar() {
               />
               <FormField
                 control={form.control}
-                name="jurusan"
-                render={({ field }) => {
-                  return (
-                    <FormItem className="mb-[0.5em]">
-                      <FormLabel className="text-gray-600">Jurusan</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          placeholder="e.g Teknik Rekayasa Mekatronika"
-                          autoComplete="off"
-                          className="focus-visible:ring-blue-200 focus-visible:border-blue-200 border-blue-200"
-                        />
-                      </FormControl>
-                      <FormMessage className="text-xs" />
-                    </FormItem>
-                  )
-                }}
-              />
-              <FormField
-                control={form.control}
                 name="nim"
                 render={({ field }) => {
                   return (
@@ -186,6 +213,98 @@ export default function Daftar() {
                           className="focus-visible:ring-blue-200 focus-visible:border-blue-200 border-blue-200"
                         />
                       </FormControl>
+                      <FormMessage className="text-xs" />
+                    </FormItem>
+                  )
+                }}
+              />
+              <div>
+                <FormLabel className="mb-2 text-gray-600">Bidang Ilmu</FormLabel>
+                <Select
+                  onValueChange={(value: string) => {
+                    setSelectedBidangIlmu(Number(value))
+                  }}
+                  defaultValue={selectedBidangIlmu.toString()}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Bidang Ilmu Program Studi" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bidangIlmu.map(value => {
+                      return (
+                        <SelectItem key={value.id} value={value.id.toString()}>
+                          {value.nama}
+                        </SelectItem>
+                      )
+                    })}
+                  </SelectContent>
+                </Select>
+              </div>
+              <FormField
+                control={form.control}
+                name="jurusan"
+                render={({ field }) => {
+                  return (
+                    <FormItem className="mb-[0.5em]">
+                      <FormLabel className="text-gray-600">Program Studi</FormLabel>
+                      {/* <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="e.g Teknik Rekayasa Mekatronika"
+                          autoComplete="off"
+                          className="focus-visible:ring-blue-200 focus-visible:border-blue-200 border-blue-200"
+                        />
+                      </FormControl> */}
+                      <Popover open={openProgramStudi}
+                        onOpenChange={(open: boolean) => {
+                          setOpenProgramStudi(open)
+                        }}
+                      >
+                        <PopoverTrigger asChild>
+                          <div>
+                            <Button
+                              type="button"
+                              variant={"outline"}
+                              role="combobox"
+                              aria-expanded={openProgramStudi}
+                              className="w-full text-gray-500 cursor-pointer"
+                            >
+                              {field.value ? programStudi.find(data => data.nama == field.value)?.nama : "Pilih program studi"}
+                              <ChevronsUpDown className="opacity-50" />
+                            </Button>
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[19em]">
+                          <Command>
+                            <CommandInput placeholder="Cari program studi" />
+                            <CommandList>
+                              <CommandEmpty>Program studi tidak ditemukan</CommandEmpty>
+                              <CommandGroup>
+                                {programStudi.map((value, idx) => {
+                                  return (
+                                    <CommandItem
+                                      key={idx}
+                                      value={value.nama}
+                                      onSelect={(_) => {
+                                        form.setValue("jurusan", value.nama);
+                                        setOpenProgramStudi(false);
+                                      }}
+                                    >
+                                      {value.nama}
+                                      <Check
+                                        className={cn(
+                                          "ml-auto",
+                                          field.value === value.nama ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                    </CommandItem>
+                                  )
+                                })}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                       <FormMessage className="text-xs" />
                     </FormItem>
                   )

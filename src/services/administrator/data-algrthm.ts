@@ -1,11 +1,12 @@
 'use server'
 
 import { db } from "@/src/databases/mysql/init"
-import { tableBobotKriteria, tableFungsiPreferensi, tableKriteria, tablePendaftar, tablePeserta, tableSkalaPerbandingan } from "@/src/databases/mysql/schema"
+import { tableBobotKriteria, tableFungsiPreferensi, tableKriteria, tablePendaftar, tablePeserta, tableSkalaPerbandingan, tableSkorProgramStudi } from "@/src/databases/mysql/schema"
 import { and, desc, eq } from "drizzle-orm";
 import { EnteringFlowType, IndexPreferenceMatrix, LeavingFlowType, NetFlowType, PrometheeInit, PrometheeUnstable, RowMatrixType } from "../promethee-algrthm/draft-main";
 import { prometheeInitKeyFn } from "./constants";
 import { ServerActionResponse } from "../base";
+import { SkorProgramStudiValuesType } from "./zod-schema";
 
 /**
  * Type
@@ -477,6 +478,24 @@ export async function GetDifferenceMatrix(periodeSeleksiId: number, options: {
       }
     }
 
+    const dataSkorProgramStudi = await db.query.tableSkorProgramStudi.findMany({
+      columns: {
+        skor: true,
+      },
+      with: {
+        program_studi: {
+          columns: {
+            nama: true
+          }
+        }
+      },
+      where: eq(tableSkorProgramStudi.periode_seleksi_id, periodeSeleksiId)
+    });
+    const skorProgramStudiRecord = dataSkorProgramStudi.reduce((prev, current) => {
+      prev[current.program_studi.nama] = current.skor;
+      return prev;
+    }, {} as Record<string, number>);
+
     const alternatif = await db.select({
       id: tablePendaftar.id,
       nama_lengkap: tablePeserta.nama_lengkap,
@@ -531,7 +550,7 @@ export async function GetDifferenceMatrix(periodeSeleksiId: number, options: {
     const prometheeInstance = new PrometheeUnstable(alternatif, prometheeInit);
     return {
       response: "data",
-      data: prometheeInstance.ScoreDifferenceMatrix()[options.kriteria],
+      data: prometheeInstance.ScoreDifferenceMatrix(skorProgramStudiRecord)[options.kriteria],
     };
   } catch (err) {
     const catchedErr = err as Error;
@@ -590,6 +609,24 @@ export async function GetPreferenceMatrix(periodeSeleksiId: number, options: {
       }
     }
 
+    const dataSkorProgramStudi = await db.query.tableSkorProgramStudi.findMany({
+      columns: {
+        skor: true,
+      },
+      with: {
+        program_studi: {
+          columns: {
+            nama: true
+          }
+        }
+      },
+      where: eq(tableSkorProgramStudi.periode_seleksi_id, periodeSeleksiId)
+    });
+    const skorProgramStudiRecord = dataSkorProgramStudi.reduce((prev, current) => {
+      prev[current.program_studi.nama] = current.skor;
+      return prev;
+    }, {} as Record<string, number>);
+
     const alternatif = await db.select({
       id: tablePendaftar.id,
       nama_lengkap: tablePeserta.nama_lengkap,
@@ -644,7 +681,7 @@ export async function GetPreferenceMatrix(periodeSeleksiId: number, options: {
     const prometheeInstance = new PrometheeUnstable(alternatif, prometheeInit);
     return {
       response: "data",
-      data: prometheeInstance.ScoreFnPreferenceMatrix(prometheeInstance.ScoreDifferenceMatrix())[options.kriteria],
+      data: prometheeInstance.ScoreFnPreferenceMatrix(prometheeInstance.ScoreDifferenceMatrix(skorProgramStudiRecord))[options.kriteria],
     };
   } catch (err) {
     const catchedErr = err as Error;
@@ -706,6 +743,24 @@ export async function GetIndexPreference(periodeSeleksiId: number, options: {
       }
     }
 
+    const dataSkorProgramStudi = await db.query.tableSkorProgramStudi.findMany({
+      columns: {
+        skor: true,
+      },
+      with: {
+        program_studi: {
+          columns: {
+            nama: true
+          }
+        }
+      },
+      where: eq(tableSkorProgramStudi.periode_seleksi_id, periodeSeleksiId)
+    });
+    const skorProgramStudiRecord = dataSkorProgramStudi.reduce((prev, current) => {
+      prev[current.program_studi.nama] = current.skor;
+      return prev;
+    }, {} as Record<string, number>);
+
     const alternatif = await db.select({
       id: tablePendaftar.id,
       nama_lengkap: tablePeserta.nama_lengkap,
@@ -758,7 +813,7 @@ export async function GetIndexPreference(periodeSeleksiId: number, options: {
       }
     });
     const prometheeInstance = new PrometheeUnstable(alternatif, prometheeInit);
-    const preferenceMatrix = prometheeInstance.ScoreFnPreferenceMatrix(prometheeInstance.ScoreDifferenceMatrix());
+    const preferenceMatrix = prometheeInstance.ScoreFnPreferenceMatrix(prometheeInstance.ScoreDifferenceMatrix(skorProgramStudiRecord));
     const preferenceIndex = prometheeInstance.ScorePreferenceIndex(preferenceMatrix);
     const leavingFlow = prometheeInstance.ScoreLeavingFlow(preferenceIndex);
     const enteringFlow = prometheeInstance.ScoreEnteringFlow(preferenceIndex);
@@ -825,6 +880,23 @@ export async function GetNetFlow(periodeSeleksiId: number, options: {
         cause: "Tipe fungsi preferensi tidak terdefinisi"
       }
     }
+    const dataSkorProgramStudi = await db.query.tableSkorProgramStudi.findMany({
+      columns: {
+        skor: true,
+      },
+      with: {
+        program_studi: {
+          columns: {
+            nama: true
+          }
+        }
+      },
+      where: eq(tableSkorProgramStudi.periode_seleksi_id, periodeSeleksiId)
+    });
+    const skorProgramStudiRecord = dataSkorProgramStudi.reduce((prev, current) => {
+      prev[current.program_studi.nama] = current.skor;
+      return prev;
+    }, {} as Record<string, number>);
 
     const alternatif = await db.select({
       id: tablePendaftar.id,
@@ -878,7 +950,7 @@ export async function GetNetFlow(periodeSeleksiId: number, options: {
       }
     });
     const prometheeInstance = new PrometheeUnstable(alternatif, prometheeInit);
-    const preferenceMatrix = prometheeInstance.ScoreFnPreferenceMatrix(prometheeInstance.ScoreDifferenceMatrix());
+    const preferenceMatrix = prometheeInstance.ScoreFnPreferenceMatrix(prometheeInstance.ScoreDifferenceMatrix(skorProgramStudiRecord));
     const preferenceIndex = prometheeInstance.ScorePreferenceIndex(preferenceMatrix);
     const leavingFlow = prometheeInstance.ScoreLeavingFlow(preferenceIndex);
     const enteringFlow = prometheeInstance.ScoreEnteringFlow(preferenceIndex);
@@ -942,6 +1014,24 @@ export async function GetPemeringkatan(periodeSeleksiId: number, options: {
       }
     }
 
+    const dataSkorProgramStudi = await db.query.tableSkorProgramStudi.findMany({
+      columns: {
+        skor: true,
+      },
+      with: {
+        program_studi: {
+          columns: {
+            nama: true
+          }
+        }
+      },
+      where: eq(tableSkorProgramStudi.periode_seleksi_id, periodeSeleksiId)
+    });
+    const skorProgramStudiRecord = dataSkorProgramStudi.reduce((prev, current) => {
+      prev[current.program_studi.nama] = current.skor;
+      return prev;
+    }, {} as Record<string, number>);
+
     const alternatif = await db.select({
       id: tablePendaftar.id,
       nama_lengkap: tablePeserta.nama_lengkap,
@@ -994,7 +1084,7 @@ export async function GetPemeringkatan(periodeSeleksiId: number, options: {
       }
     });
     const prometheeInstance = new PrometheeUnstable(alternatif, prometheeInit);
-    const preferenceMatrix = prometheeInstance.ScoreFnPreferenceMatrix(prometheeInstance.ScoreDifferenceMatrix());
+    const preferenceMatrix = prometheeInstance.ScoreFnPreferenceMatrix(prometheeInstance.ScoreDifferenceMatrix(skorProgramStudiRecord));
     const preferenceIndex = prometheeInstance.ScorePreferenceIndex(preferenceMatrix);
     const leavingFlow = prometheeInstance.ScoreLeavingFlow(preferenceIndex);
     const enteringFlow = prometheeInstance.ScoreEnteringFlow(preferenceIndex);
@@ -1032,6 +1122,75 @@ export async function GetPemeringkatan(periodeSeleksiId: number, options: {
       name: catchedErr.name,
       message: catchedErr.message,
       cause: catchedErr.cause as string,
+    }
+  }
+}
+
+export async function AddSkorProgramStudi(periodeSeleksiId: number, data: SkorProgramStudiValuesType): Promise<ServerActionResponse<unknown>> {
+  try {
+    await db.insert(tableSkorProgramStudi).values({
+      skor: data.skor,
+      program_studi_id: data.program_studi_id,
+      periode_seleksi_id: periodeSeleksiId
+    });
+
+    return {
+      response: "success",
+      name: "administrator:skor-program-studi@add",
+      message: "Berhasil menambahkan skor program studi"
+    }
+  } catch (err) {
+    const errCatched = err as Error;
+    return {
+      response: "error",
+      name: errCatched.name,
+      cause: errCatched.cause as string,
+      message: errCatched.message
+    }
+  }
+}
+
+export async function UpdateSkorProgramStudi(data: SkorProgramStudiValuesType): Promise<ServerActionResponse<unknown>> {
+  try {
+    await db.update(tableSkorProgramStudi)
+      .set({
+        skor: data.skor,
+        program_studi_id: data.program_studi_id
+      })
+      .where(eq(tableSkorProgramStudi.id, data.id as number))
+
+    return {
+      response: "success",
+      name: "administrator:skor-program-studi@change",
+      message: "Berhasil mengubah data skor progran studi"
+    }
+  } catch (err) {
+    const errCatched = err as Error;
+    return {
+      response: "error",
+      name: errCatched.name,
+      cause: errCatched.cause as string,
+      message: errCatched.message,
+    }
+  }
+}
+
+export async function DeleteSkorProgramStudi(idSkorProgramStudi: number): Promise<ServerActionResponse<unknown>> {
+  try {
+    await db.delete(tableSkorProgramStudi).where(eq(tableSkorProgramStudi.id, idSkorProgramStudi));
+
+    return {
+      response: "success",
+      name: "administrator:skor-program-studi@delete",
+      message: "Berhasil menghapus skor program studi",
+    }
+  } catch (err) {
+    const errCatched = err as Error;
+    return {
+      response: "error",
+      name: errCatched.name,
+      cause: errCatched.cause as string,
+      message: errCatched.message,
     }
   }
 }

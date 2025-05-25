@@ -3,7 +3,7 @@
 import { PeriodeSeleksiValuesType } from "./zod-schema";
 import { db } from "@/src/databases/mysql/init";
 import { tablePeriodeSeleksi } from "@/src/databases/mysql/schema";
-import { ServerActionResponse, SuccessMessage } from "../base";
+import { ServerActionResponse } from "../base";
 import { and, desc, eq, like } from "drizzle-orm";
 
 /**

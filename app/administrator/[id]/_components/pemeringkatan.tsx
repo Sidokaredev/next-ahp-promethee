@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { prometheeInitKategori, prometheeInitKeyProps } from "@/src/services/administrator/constants";
 import { GetPemeringkatan, RankingAlternatifType } from "@/src/services/administrator/data-algrthm";
 import { GetPendaftarDiterima, UpdateStatusPendaftar } from "@/src/services/administrator/pendaftar";
-import { MoreVertical, Search, UserCheck } from "lucide-react";
+import { CloudAlert, MoreVertical, Search, UserCheck } from "lucide-react";
 import { useParams } from "next/navigation"
 import { ChangeEvent, SetStateAction, useEffect, useState } from "react";
 
@@ -41,6 +41,7 @@ export default function Pemeringkatan({
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState<boolean>(false);
   const [refetch, setRefetch] = useState<boolean>(false);
+  const [err, setErr] = useState<Error>();
   // constant@ranking
   const filteredRanking = ranking.filter((alt) => alt.nama_lengkap.toLowerCase().includes(query.toLowerCase()));
   const paginatedRanking = filteredRanking.slice(((10 * paginate.current) - 10), 10 * paginate.current);
@@ -92,6 +93,9 @@ export default function Pemeringkatan({
       );
       switch (req.response) {
         case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          setErr(err);
           return setNotification({
             show: true,
             name: req.name,
@@ -111,6 +115,9 @@ export default function Pemeringkatan({
       const req = await GetPendaftarDiterima(Number(params.id));
       switch (req.response) {
         case "error":
+          const err = new Error(req.message, { cause: req.cause });
+          err.name = req.name;
+          setErr(err);
           return setNotification({
             show: true,
             name: req.name,
@@ -127,6 +134,19 @@ export default function Pemeringkatan({
   }, [refetch]);
   return (
     <div className="">
+      {/* message@error */}
+      {err && (
+        <div className="m-3 pt-2 pb-2 ps-3 pe-3 flex gap-x-3 bg-red-50 border border-red-200 rounded-sm">
+          <CloudAlert className="text-red-500" />
+          <p className="font-bold text-base text-red-500">
+            {err.name}
+            <br />
+            <span className="font-normal text-sm text-gray-600">
+              {err.message}
+            </span>
+          </p>
+        </div>
+      )}
       <div className="mt-[1em] flex justify-between items-center">
         <p className="font-semibold text-gray-800">
           Hasil Pemeringkatan Alternatif

@@ -48,14 +48,6 @@ export default function HomeNavigation() {
             </p>
           </div>
         </div>
-        <div className="flex gap-x-[1em] items-center">
-          <p className="font-semibold text-sm text-gray-600 hover:text-primary cursor-pointer">
-            Informasi Penerimaan
-          </p>
-          <p className="font-semibold text-sm text-gray-600 hover:text-primary cursor-pointer">
-            Alur Pendaftaran
-          </p>
-        </div>
         {role !== "" ? (
           <div className="flex items-center">
             <Button size={"sm"} variant={"ghost"} className="cursor-pointer border hover:text-primary"

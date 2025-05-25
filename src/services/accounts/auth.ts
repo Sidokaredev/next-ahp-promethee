@@ -30,6 +30,13 @@ export async function SignUp(data: SignUpValuesType): Promise<ServerActionRespon
     columns: {
       email: true
     },
+    // with: {
+    //   peserta: {
+    //     columns: {
+    //       nim: true
+    //     },
+    //   },
+    // },
     where: eq(tablePengguna.email, data.email)
   });
   if (check) {
@@ -64,7 +71,7 @@ export async function SignUp(data: SignUpValuesType): Promise<ServerActionRespon
       })
     });
 
-    const timeExp = new Date(Date.now() + 1 * 60 * 60 * 1000);
+    const timeExp = new Date(Date.now() + 6 * 60 * 60 * 1000);
     const secretToken = new Uint8Array(Buffer.from(process.env.SECRET_TOKEN!, "base64"));
     const payload: TokenPayload = {
       ID: uniqueIdPeserta,
@@ -156,7 +163,7 @@ export async function SignIn(data: SignInValuesType): Promise<ServerActionRespon
       role = "administrator";
     };
 
-    const timeExp = new Date(Date.now() + 1 * 60 * 60 * 1000);
+    const timeExp = new Date(Date.now() + 6 * 60 * 60 * 1000);
     const secretToken = new Uint8Array(Buffer.from(process.env.SECRET_TOKEN!, "base64"));
     const payload: TokenPayload = {
       ID: check.administrator ? check.administrator.id : check.peserta!.id,

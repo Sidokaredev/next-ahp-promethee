@@ -1,3 +1,4 @@
+import { KeyFunction } from "../administrator/constants";
 import { DataAlternatifType } from "../administrator/pendaftar";
 
 type UsualCriterion = {
@@ -31,7 +32,7 @@ export type FnPreferensiType = UsualCriterion | UShapeCriterion | VShapeCriterio
 export type PrometheeInit = {
   namaKriteria: string;
   keyProp: string;
-  keyFn?: (data: unknown) => number;
+  keyFn?: KeyFunction
   // tipeFnPreferensi: UsualCriterion | UShapeCriterion | VShapeCriterion | LevelCriterion | LinearCriterionWithIndifference | GaussianCriterion;
   tipeFnPreferensi: {
     id: number,
@@ -119,7 +120,7 @@ export class PrometheeUnstable {
     this.initProps = init;
   }
 
-  ScoreDifferenceMatrix() {
+  ScoreDifferenceMatrix(skorProgramStudi: Record<string, number>) {
     const deviasiBerpasangan: Record<string, RowMatrixType[]> = {};
 
     for (const props of this.initProps) {
@@ -131,8 +132,14 @@ export class PrometheeUnstable {
         const columnMatrix: ColumnMatrixType[] = [];
 
         for (const columnAlt of this.alternatives) {
-          const A = keyFn ? keyFn(rowAlt[key]) : rowAlt[key] as number;
-          const B = keyFn ? keyFn(columnAlt[key]) : columnAlt[key] as number;
+          let A, B;
+          if (namaKriteria == "Jurusan") {
+            A = keyFn ? keyFn(rowAlt[key], skorProgramStudi) : rowAlt[key] as number
+            B = keyFn ? keyFn(columnAlt[key], skorProgramStudi) : columnAlt[key] as number;
+          } else {
+            A = keyFn ? keyFn(rowAlt[key], {}) : rowAlt[key] as number;
+            B = keyFn ? keyFn(columnAlt[key], {}) : columnAlt[key] as number;
+          }
 
           const nilai = this.kategoriFn[kategori](A, B);
           columnMatrix.push({
