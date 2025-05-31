@@ -62,7 +62,7 @@ export async function AuthenticationRole(request: NextRequest): Promise<NextResp
 
     // IF EXPIRED DIRECT TO LOGIN PAGE
 
-    const req = await fetch(`http://localhost:3000/api/roles?token=${hasAuthCookie.value}`, { method: "GET" });
+    const req = await fetch(`http://localhost:3000/api/roles?token=${hasAuthCookie.value}`, { method: "GET", cache: "no-cache" });
     const { role } = await req.json();
 
     const isTargetMatch = target.startsWith(`/${role}`);

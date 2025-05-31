@@ -1,4 +1,5 @@
-import { db } from "@/src/databases/mysql/init";
+// import { db } from "@/src/databases/mysql/init";
+import { getDB } from "@/src/databases/mysql/init";
 import { tableDokumen } from "@/src/databases/mysql/schema";
 import { eq } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const db = await getDB();
     const dokumen = await db.query.tableDokumen.findFirst({
       where: eq(tableDokumen.id, Number(searchParams))
     });

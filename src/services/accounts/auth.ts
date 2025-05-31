@@ -1,7 +1,7 @@
 'use server';
 
 import { v4 as uuidv4 } from "uuid";
-import { db } from "@/src/databases/mysql/init";
+// import { db } from "@/src/databases/mysql/init";
 import { tableAdministrator, tablePengguna, tablePeserta } from "@/src/databases/mysql/schema";
 import { eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -10,6 +10,7 @@ import { cookies } from "next/headers";
 import { AdmSignUpValuesType, SignInValuesType, SignUpValuesType } from "./zod-schema";
 import { redirect } from "next/navigation";
 import { ServerActionResponse } from "../base";
+import { getDB } from "@/src/databases/mysql/init";
 /**
  * Type
  */
@@ -26,33 +27,35 @@ export type TokenPayload = jose.JWTPayload & {
  * AuthFn
  */
 export async function SignUp(data: SignUpValuesType): Promise<ServerActionResponse<unknown>> {
-  const check = await db.query.tablePengguna.findFirst({
-    columns: {
-      email: true
-    },
-    // with: {
-    //   peserta: {
-    //     columns: {
-    //       nim: true
-    //     },
-    //   },
-    // },
-    where: eq(tablePengguna.email, data.email)
-  });
-  if (check) {
-    return {
-      response: "error",
-      name: "Duplikasi email",
-      message: "email telah terdaftar, masuk dengan email tersebut atau daftar dengan email lain",
-      cause: `"${data.email}" telah digunakan`,
-    }
-  }
-
-  const uniqueIdPengguna = uuidv4();
-  const uniqueIdPeserta = uuidv4();
-  const rounds = await bcrypt.genSalt(10);
-  const hashed = await bcrypt.hash(data.password, rounds);
   try {
+    const db = await getDB();
+    const check = await db.query.tablePengguna.findFirst({
+      columns: {
+        email: true
+      },
+      // with: {
+      //   peserta: {
+      //     columns: {
+      //       nim: true
+      //     },
+      //   },
+      // },
+      where: eq(tablePengguna.email, data.email)
+    });
+    if (check) {
+      return {
+        response: "error",
+        name: "Duplikasi email",
+        message: "email telah terdaftar, masuk dengan email tersebut atau daftar dengan email lain",
+        cause: `"${data.email}" telah digunakan`,
+      }
+    }
+
+    const uniqueIdPengguna = uuidv4();
+    const uniqueIdPeserta = uuidv4();
+    const rounds = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(data.password, rounds);
+
     await db.transaction(async (tx) => {
       await tx.insert(tablePengguna).values({
         id: uniqueIdPengguna,
@@ -111,6 +114,7 @@ export async function SignUp(data: SignUpValuesType): Promise<ServerActionRespon
 
 export async function SignIn(data: SignInValuesType): Promise<ServerActionResponse<"peserta" | "administrator">> {
   try {
+    const db = await getDB();
     const check = await db.query.tablePengguna.findFirst({
       columns: {
         id: true,
@@ -201,26 +205,26 @@ export async function SignIn(data: SignInValuesType): Promise<ServerActionRespon
 }
 
 export async function AdmSignUp(data: AdmSignUpValuesType): Promise<AuthSuccess | Error> {
-  const check = await db.query.tablePengguna.findFirst({
-    columns: {
-      email: true
-    },
-    where: eq(tablePengguna.email, data.email)
-  });
-  if (check) {
-    const err: Error = new Error("email telah terdaftar, masuk dengan email tersebut atau daftar dengan email lain", {
-      cause: `"${data.email}" telah digunakan`,
-    });
-    err.name = "duplikasi email";
-    return err;
-  }
-
-  const uniqueIdPengguna = uuidv4();
-  const uniqueIdAdministrator = uuidv4();
-  const rounds = await bcrypt.genSalt(10);
-  const hashed = await bcrypt.hash(data.password, rounds);
-
   try {
+    const db = await getDB();
+    const check = await db.query.tablePengguna.findFirst({
+      columns: {
+        email: true
+      },
+      where: eq(tablePengguna.email, data.email)
+    });
+    if (check) {
+      const err: Error = new Error("email telah terdaftar, masuk dengan email tersebut atau daftar dengan email lain", {
+        cause: `"${data.email}" telah digunakan`,
+      });
+      err.name = "duplikasi email";
+      return err;
+    }
+
+    const uniqueIdPengguna = uuidv4();
+    const uniqueIdAdministrator = uuidv4();
+    const rounds = await bcrypt.genSalt(10);
+    const hashed = await bcrypt.hash(data.password, rounds);
     await db.transaction(async (tx) => {
       await tx.insert(tablePengguna).values({
         id: uniqueIdPengguna,

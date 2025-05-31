@@ -5,7 +5,8 @@ import * as jose from "jose";
 import { TokenPayload } from "./accounts/auth";
 import { tablePengguna } from "@/src/databases/mysql/schema";
 import { eq } from "drizzle-orm";
-import { db } from "@/src/databases/mysql/init";
+import { getDB } from "../databases/mysql/init";
+// import { db } from "@/src/databases/mysql/init";
 
 /**
  * Base Type
@@ -51,6 +52,8 @@ export async function GetNameNavigation(): Promise<string | Error> {
   try {
     const { payload } = await jose.jwtDecrypt(token.value, secretToken);
     const { id_pengguna, as: role } = payload as TokenPayload;
+
+    const db = await getDB();
     const data = await db.query.tablePengguna.findFirst({
       columns: {},
       where: eq(tablePengguna.id, id_pengguna),

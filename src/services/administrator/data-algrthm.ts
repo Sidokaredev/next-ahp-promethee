@@ -1,12 +1,13 @@
 'use server'
 
-import { db } from "@/src/databases/mysql/init"
+// import { db } from "@/src/databases/mysql/init";
 import { tableBobotKriteria, tableFungsiPreferensi, tableKriteria, tablePendaftar, tablePeserta, tableSkalaPerbandingan, tableSkorProgramStudi } from "@/src/databases/mysql/schema"
 import { and, desc, eq } from "drizzle-orm";
 import { EnteringFlowType, IndexPreferenceMatrix, LeavingFlowType, NetFlowType, PrometheeInit, PrometheeUnstable, RowMatrixType } from "../promethee-algrthm/draft-main";
 import { prometheeInitKeyFn } from "./constants";
 import { ServerActionResponse } from "../base";
 import { SkorProgramStudiValuesType } from "./zod-schema";
+import { getDB } from "@/src/databases/mysql/init";
 
 /**
  * Type
@@ -55,6 +56,7 @@ export type RankingAlternatifType = {
 /* -> AHP */
 export async function GetKriteria(): Promise<ServerActionResponse<KriteriaType[]>> {
   try {
+    const db = await getDB();
     const dataKriteria = await db.select({ id: tableKriteria.id, nama: tableKriteria.nama }).from(tableKriteria);
     return {
       response: 'data',
@@ -74,6 +76,7 @@ export async function GetKriteria(): Promise<ServerActionResponse<KriteriaType[]
 
 export async function GetSkalaPerbandingan(periodeSeleksiId: number): Promise<ServerActionResponse<Record<string, SkalaPerbandinganType>>> {
   try {
+    const db = await getDB();
     const dataSkalaPerbandingan = await db.select({
       id: tableSkalaPerbandingan.id,
       matrix_ref: tableSkalaPerbandingan.matrix_ref,
@@ -111,6 +114,7 @@ export async function GetSkalaPerbandingan(periodeSeleksiId: number): Promise<Se
 // PROBABLY UNUSED
 export async function ValidasiKriteriaAHP(periodeSeleksiId: number) {
   try {
+    const db = await getDB();
     const kriteria = await db.select().from(tableKriteria);
     if (kriteria.length == 0) {
       const err = new Error("Data kriteria belum ditambahkan, tambahkan terlebih dahulu", {
@@ -158,6 +162,7 @@ export async function AddSkalaPerbandingan(periodeSeleksiId: number, skalaPerban
   });
 
   try {
+    const db = await getDB();
     await db.insert(tableSkalaPerbandingan).values(values);
 
     return {
@@ -178,19 +183,21 @@ export async function AddSkalaPerbandingan(periodeSeleksiId: number, skalaPerban
 }
 
 export async function ChangeSkalaPerbandingan(periodeSeleksiId: number, skalaPerbandinganBerpasangan: Record<string, SkalaPerbandinganType>): Promise<ServerActionResponse<unknown>> {
-  const updatedValues = Object.entries(skalaPerbandinganBerpasangan).map(([key, value]) => {
-    return value;
-  });
-  const updatePromises = updatedValues.map(value => {
-    return db.update(tableSkalaPerbandingan).set({ nilai: value.nilai }).where(
-      and(
-        eq(tableSkalaPerbandingan.id, value.id),
-        eq(tableSkalaPerbandingan.periode_seleksi_id, periodeSeleksiId)
-      )
-    )
-  });
 
   try {
+    const db = await getDB();
+    const updatedValues = Object.entries(skalaPerbandinganBerpasangan).map(([key, value]) => {
+      return value;
+    });
+    const updatePromises = updatedValues.map(value => {
+      return db.update(tableSkalaPerbandingan).set({ nilai: value.nilai }).where(
+        and(
+          eq(tableSkalaPerbandingan.id, value.id),
+          eq(tableSkalaPerbandingan.periode_seleksi_id, periodeSeleksiId)
+        )
+      )
+    });
+
     const allUpdates = await Promise.all(updatePromises);
     return {
       response: "success",
@@ -212,6 +219,7 @@ export async function ChangeSkalaPerbandingan(periodeSeleksiId: number, skalaPer
 /* -> Promethee */
 export async function GetBobotKriteria(periodeSeleksiId: number): Promise<ServerActionResponse<Record<string, BobotKriteriaType>>> {
   try {
+    const db = await getDB();
     const dataBobotKriteria = await db.select({
       id: tableBobotKriteria.id,
       nama_kriteria: tableKriteria.nama,
@@ -255,6 +263,7 @@ export async function GetBobotKriteria(periodeSeleksiId: number): Promise<Server
 
 export async function GetFungsiPreferensi(periodeSeleksiId: number): Promise<ServerActionResponse<Record<string, FungsiKriteriaType>>> {
   try {
+    const db = await getDB();
     const dataFnPreferensi = await db.select({
       id: tableFungsiPreferensi.id,
       nama_kriteria: tableKriteria.nama,
@@ -305,6 +314,7 @@ export async function GetFungsiPreferensi(periodeSeleksiId: number): Promise<Ser
 
 export async function AddBobotKriteria(periodeSeleksiId: number, data: Record<string, { kriteria_id: number; nilai: string; }>): Promise<ServerActionResponse<unknown>> {
   try {
+    const db = await getDB();
     const valuesToBeInserted = Object.entries(data).map(([_, value]) => {
       return {
         nilai: value.nilai,
@@ -333,6 +343,7 @@ export async function AddBobotKriteria(periodeSeleksiId: number, data: Record<st
 
 export async function ChangeBobotKriteria(periodeSeleksiId: number, data: Record<string, BobotKriteriaType>): Promise<ServerActionResponse<unknown>> {
   try {
+    const db = await getDB();
     const updateInPromises = Object.entries(data).map(([_, value]) => {
       return db.update(tableBobotKriteria)
         .set({ nilai: value.nilai })
@@ -370,6 +381,7 @@ export async function AddFnPreferensi(periodeSeleksiId: number, data: Record<str
   s: string | null;
 }>): Promise<ServerActionResponse<unknown>> {
   try {
+    const db = await getDB();
     const valuesToBeInserted = Object.entries(data).map(([_, value]) => {
       return {
         tipe: value.tipe,
@@ -402,6 +414,7 @@ export async function AddFnPreferensi(periodeSeleksiId: number, data: Record<str
 
 export async function ChangeFnPreferensi(periodeSeleksiId: number, data: Record<string, FungsiKriteriaType>): Promise<ServerActionResponse<unknown>> {
   try {
+    const db = await getDB();
     const updateInPromises = Object.entries(data).map(([_, value]) => {
       return db.update(tableFungsiPreferensi).set({
         tipe: value.tipe,
@@ -439,6 +452,7 @@ export async function GetDifferenceMatrix(periodeSeleksiId: number, options: {
   kriteria: string;
 }): Promise<ServerActionResponse<RowMatrixType[]>> {
   try {
+    const db = await getDB();
     const bobotKriteria = await db.select({
       id: tableBobotKriteria.id,
       nilai: tableBobotKriteria.nilai,
@@ -570,6 +584,7 @@ export async function GetPreferenceMatrix(periodeSeleksiId: number, options: {
   kriteria: string;
 }): Promise<ServerActionResponse<RowMatrixType[]>> {
   try {
+    const db = await getDB();
     const bobotKriteria = await db.select({
       id: tableBobotKriteria.id,
       nilai: tableBobotKriteria.nilai,
@@ -704,6 +719,7 @@ export async function GetIndexPreference(periodeSeleksiId: number, options: {
   entering_flow: EnteringFlowType,
 }>> {
   try {
+    const db = await getDB();
     const bobotKriteria = await db.select({
       id: tableBobotKriteria.id,
       nilai: tableBobotKriteria.nilai,
@@ -842,6 +858,7 @@ export async function GetNetFlow(periodeSeleksiId: number, options: {
   kategori: Record<string, "maksimasi" | "minimasi">;
 }): Promise<ServerActionResponse<NetFlowType>> {
   try {
+    const db = await getDB();
     const bobotKriteria = await db.select({
       id: tableBobotKriteria.id,
       nilai: tableBobotKriteria.nilai,
@@ -975,6 +992,7 @@ export async function GetPemeringkatan(periodeSeleksiId: number, options: {
   kategori: Record<string, "maksimasi" | "minimasi">;
 }): Promise<ServerActionResponse<RankingAlternatifType[]>> {
   try {
+    const db = await getDB();
     const bobotKriteria = await db.select({
       id: tableBobotKriteria.id,
       nilai: tableBobotKriteria.nilai,
@@ -1128,6 +1146,7 @@ export async function GetPemeringkatan(periodeSeleksiId: number, options: {
 
 export async function AddSkorProgramStudi(periodeSeleksiId: number, data: SkorProgramStudiValuesType): Promise<ServerActionResponse<unknown>> {
   try {
+    const db = await getDB();
     await db.insert(tableSkorProgramStudi).values({
       skor: data.skor,
       program_studi_id: data.program_studi_id,
@@ -1152,6 +1171,7 @@ export async function AddSkorProgramStudi(periodeSeleksiId: number, data: SkorPr
 
 export async function UpdateSkorProgramStudi(data: SkorProgramStudiValuesType): Promise<ServerActionResponse<unknown>> {
   try {
+    const db = await getDB();
     await db.update(tableSkorProgramStudi)
       .set({
         skor: data.skor,
@@ -1177,6 +1197,7 @@ export async function UpdateSkorProgramStudi(data: SkorProgramStudiValuesType): 
 
 export async function DeleteSkorProgramStudi(idSkorProgramStudi: number): Promise<ServerActionResponse<unknown>> {
   try {
+    const db = await getDB();
     await db.delete(tableSkorProgramStudi).where(eq(tableSkorProgramStudi.id, idSkorProgramStudi));
 
     return {

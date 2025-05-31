@@ -1,9 +1,10 @@
 'use server'
 
-import { db } from "@/src/databases/mysql/init";
+// import { db } from "@/src/databases/mysql/init";
 import { tableProgramStudi, tableSkorProgramStudi } from "@/src/databases/mysql/schema";
 import { and, desc, eq, like } from "drizzle-orm";
 import { ServerActionResponse } from "../base";
+import { getDB } from "@/src/databases/mysql/init";
 
 export type ProgramStudiType = {
   id: number;
@@ -29,6 +30,7 @@ export type SkorProgramStudiType = {
 
 export async function ProgramStudiGet(options: { bidang_ilmu_id: number }): Promise<ServerActionResponse<ProgramStudiType[]>> {
   try {
+    const db = await getDB();
     const dataProgramStudi = await db.query.tableProgramStudi.findMany({
       columns: {
         id: true,
@@ -57,6 +59,7 @@ export async function ProgramStudiGet(options: { bidang_ilmu_id: number }): Prom
 
 export async function BidangIlmuGet(): Promise<ServerActionResponse<BidangIlmuType[]>> {
   try {
+    const db = await getDB();
     const dataBidangIlmu = await db.query.tableBidangIlmu.findMany({
       columns: {
         id: true,
@@ -82,6 +85,7 @@ export async function BidangIlmuGet(): Promise<ServerActionResponse<BidangIlmuTy
 export async function SkorProgramStudiGet(periodeSeleksiId: number, page: number): Promise<ServerActionResponse<SkorProgramStudiType>> {
   const offset = (page * 5) - 5;
   try {
+    const db = await getDB();
     const countSkorProgramStudi = await db.$count(
       tableSkorProgramStudi,
       eq(tableSkorProgramStudi.periode_seleksi_id, periodeSeleksiId)

@@ -1,7 +1,7 @@
 {
   "version": "5",
   "dialect": "mysql",
-  "id": "d9e2fff5-9fa1-4887-8799-58fac727a8a6",
+  "id": "cc0cc6f4-08d3-40cf-bff4-91a8a7f2d4d4",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "administrator": {
@@ -53,8 +53,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "administrator_pengguna_id_pengguna_id_fk": {
-          "name": "administrator_pengguna_id_pengguna_id_fk",
+        "fk_administrator_pengguna": {
+          "name": "fk_administrator_pengguna",
           "tableFrom": "administrator",
           "tableTo": "pengguna",
           "columnsFrom": [
@@ -78,19 +78,152 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
+    "bidang_ilmu": {
+      "name": "bidang_ilmu",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "nama": {
+          "name": "nama",
+          "type": "varchar(512)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {
+        "bidang_ilmu_id": {
+          "name": "bidang_ilmu_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "bobot_kriteria": {
+      "name": "bobot_kriteria",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "nilai": {
+          "name": "nilai",
+          "type": "decimal(4,3)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "kriteria_id": {
+          "name": "kriteria_id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "periode_seleksi_id": {
+          "name": "periode_seleksi_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fk_bobot_kriteria": {
+          "name": "fk_bobot_kriteria",
+          "tableFrom": "bobot_kriteria",
+          "tableTo": "kriteria",
+          "columnsFrom": [
+            "kriteria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_bobot_periode_seleksi": {
+          "name": "fk_bobot_periode_seleksi",
+          "tableFrom": "bobot_kriteria",
+          "tableTo": "periode_seleksi",
+          "columnsFrom": [
+            "periode_seleksi_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "bobot_kriteria_id": {
+          "name": "bobot_kriteria_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
     "dokumen": {
       "name": "dokumen",
       "columns": {
         "id": {
           "name": "id",
-          "type": "bigint unsigned",
+          "type": "bigint",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": true
         },
         "tujuan_dokumen": {
           "name": "tujuan_dokumen",
-          "type": "varchar(64)",
+          "type": "varchar(512)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -152,6 +285,114 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
+    "fungsi_preferensi": {
+      "name": "fungsi_preferensi",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "tipe": {
+          "name": "tipe",
+          "type": "varchar(256)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "q": {
+          "name": "q",
+          "type": "decimal(4,2)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "p": {
+          "name": "p",
+          "type": "decimal(4,2)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "s": {
+          "name": "s",
+          "type": "decimal(4,2)",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "kriteria_id": {
+          "name": "kriteria_id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "periode_seleksi_id": {
+          "name": "periode_seleksi_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fk_fungsi_preferensi_kriteria": {
+          "name": "fk_fungsi_preferensi_kriteria",
+          "tableFrom": "fungsi_preferensi",
+          "tableTo": "kriteria",
+          "columnsFrom": [
+            "kriteria_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_fungsi_preferensi_periode_seleksi": {
+          "name": "fk_fungsi_preferensi_periode_seleksi",
+          "tableFrom": "fungsi_preferensi",
+          "tableTo": "periode_seleksi",
+          "columnsFrom": [
+            "periode_seleksi_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "fungsi_preferensi_id": {
+          "name": "fungsi_preferensi_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
     "kriteria": {
       "name": "kriteria",
       "columns": {
@@ -164,7 +405,7 @@
         },
         "nama": {
           "name": "nama",
-          "type": "varchar(64)",
+          "type": "varchar(512)",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -198,12 +439,33 @@
       "uniqueConstraints": {},
       "checkConstraint": {}
     },
-    "kriteria_periode_seleksi": {
-      "name": "kriteria_periode_seleksi",
+    "pendaftar": {
+      "name": "pendaftar",
       "columns": {
-        "kriteria_id": {
-          "name": "kriteria_id",
+        "id": {
+          "name": "id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "indek_prestasi_kumulatif": {
+          "name": "indek_prestasi_kumulatif",
+          "type": "decimal(3,2)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "semester": {
+          "name": "semester",
           "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "enum('diproses','diterima')",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -214,26 +476,56 @@
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
+        },
+        "peserta_id": {
+          "name": "peserta_id",
+          "type": "varchar(512)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sp_universitas_id": {
+          "name": "sp_universitas_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sp_bakesbangpol_provinsi_id": {
+          "name": "sp_bakesbangpol_provinsi_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "sp_bakesbangpol_daerah_id": {
+          "name": "sp_bakesbangpol_daerah_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {},
       "foreignKeys": {
-        "m2m_fk_kriteria": {
-          "name": "m2m_fk_kriteria",
-          "tableFrom": "kriteria_periode_seleksi",
-          "tableTo": "kriteria",
-          "columnsFrom": [
-            "kriteria_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "m2m_fk_periode_seleksi": {
-          "name": "m2m_fk_periode_seleksi",
-          "tableFrom": "kriteria_periode_seleksi",
+        "fk_pendaftar_periode_seleksi": {
+          "name": "fk_pendaftar_periode_seleksi",
+          "tableFrom": "pendaftar",
           "tableTo": "periode_seleksi",
           "columnsFrom": [
             "periode_seleksi_id"
@@ -243,14 +535,65 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+        },
+        "fk_pendaftar_peserta": {
+          "name": "fk_pendaftar_peserta",
+          "tableFrom": "pendaftar",
+          "tableTo": "peserta",
+          "columnsFrom": [
+            "peserta_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_universitas_dokumen": {
+          "name": "fk_universitas_dokumen",
+          "tableFrom": "pendaftar",
+          "tableTo": "dokumen",
+          "columnsFrom": [
+            "sp_universitas_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_bakesbangpol_provinsi_dokumen": {
+          "name": "fk_bakesbangpol_provinsi_dokumen",
+          "tableFrom": "pendaftar",
+          "tableTo": "dokumen",
+          "columnsFrom": [
+            "sp_bakesbangpol_provinsi_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_bakesbangpol_daerah_dokumen": {
+          "name": "fk_bakesbangpol_daerah_dokumen",
+          "tableFrom": "pendaftar",
+          "tableTo": "dokumen",
+          "columnsFrom": [
+            "sp_bakesbangpol_daerah_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {
-        "composite_kriteria_periode_seleksi": {
-          "name": "composite_kriteria_periode_seleksi",
+        "pendaftar_id": {
+          "name": "pendaftar_id",
           "columns": [
-            "kriteria_id",
-            "periode_seleksi_id"
+            "id"
           ]
         }
       },
@@ -341,9 +684,16 @@
           "notNull": false,
           "autoincrement": false
         },
-        "tanggal_pendaftaran": {
-          "name": "tanggal_pendaftaran",
-          "type": "varchar(128)",
+        "tanggal_dibuka": {
+          "name": "tanggal_dibuka",
+          "type": "datetime",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "batas_pendaftaran": {
+          "name": "batas_pendaftaran",
+          "type": "datetime",
           "primaryKey": false,
           "notNull": true,
           "autoincrement": false
@@ -439,6 +789,13 @@
           "notNull": true,
           "autoincrement": false
         },
+        "akreditasi": {
+          "name": "akreditasi",
+          "type": "enum('A','B','C','Tidak Terakreditasi')",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
         "no_telepon": {
           "name": "no_telepon",
           "type": "bigint unsigned",
@@ -471,8 +828,8 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "peserta_pengguna_id_pengguna_id_fk": {
-          "name": "peserta_pengguna_id_pengguna_id_fk",
+        "fk_peserta_pengguna": {
+          "name": "fk_peserta_pengguna",
           "tableFrom": "peserta",
           "tableTo": "pengguna",
           "columnsFrom": [
@@ -488,6 +845,73 @@
       "compositePrimaryKeys": {
         "peserta_id": {
           "name": "peserta_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "program_studi": {
+      "name": "program_studi",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "nama": {
+          "name": "nama",
+          "type": "varchar(1024)",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "bidang_ilmu_id": {
+          "name": "bidang_ilmu_id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fk_program_studi_bidang_ilmu": {
+          "name": "fk_program_studi_bidang_ilmu",
+          "tableFrom": "program_studi",
+          "tableTo": "bidang_ilmu",
+          "columnsFrom": [
+            "bidang_ilmu_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "program_studi_id": {
+          "name": "program_studi_id",
           "columns": [
             "id"
           ]
@@ -562,6 +986,93 @@
       "compositePrimaryKeys": {
         "skala_perbandingan_id": {
           "name": "skala_perbandingan_id",
+          "columns": [
+            "id"
+          ]
+        }
+      },
+      "uniqueConstraints": {},
+      "checkConstraint": {}
+    },
+    "skor_program_studi": {
+      "name": "skor_program_studi",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "skor": {
+          "name": "skor",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "program_studi_id": {
+          "name": "program_studi_id",
+          "type": "int",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "periode_seleksi_id": {
+          "name": "periode_seleksi_id",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "(now())"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "fk_skor_program_studi_program_studi": {
+          "name": "fk_skor_program_studi_program_studi",
+          "tableFrom": "skor_program_studi",
+          "tableTo": "program_studi",
+          "columnsFrom": [
+            "program_studi_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "fk_skor_program_studi_periode_seleksi": {
+          "name": "fk_skor_program_studi_periode_seleksi",
+          "tableFrom": "skor_program_studi",
+          "tableTo": "periode_seleksi",
+          "columnsFrom": [
+            "periode_seleksi_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "skor_program_studi_id": {
+          "name": "skor_program_studi_id",
           "columns": [
             "id"
           ]

@@ -1,12 +1,13 @@
 'use server';
 
-import { db } from "@/src/databases/mysql/init";
+// import { db } from "@/src/databases/mysql/init";
 import { tablePeserta } from "@/src/databases/mysql/schema";
 import { eq } from "drizzle-orm";
 import * as jose from "jose";
 import { cookies } from "next/headers";
 import { TokenPayload } from "../accounts/auth";
 import { ServerActionResponse } from "../base";
+import { getDB } from "@/src/databases/mysql/init";
 /**
  * Type
  */
@@ -66,6 +67,8 @@ export async function GetProfilePeserta<T>(options: {
   try {
     const { payload } = await jose.jwtDecrypt(token.value, secretToken);
     const { ID } = payload as TokenPayload;
+
+    const db = await getDB();
     const profiles = await db.query.tablePeserta.findFirst({
       columns: { ...options.columns },
       where: eq(tablePeserta.id, ID),
@@ -98,6 +101,7 @@ export async function GetProfilePeserta<T>(options: {
 
 export async function ChangeProfilePeserta(data: ProfilePesertaType): Promise<ServerActionResponse<unknown>> {
   try {
+    const db = await getDB();
     await db.update(tablePeserta).set({
       nama_lengkap: data.nama_lengkap,
       universitas: data.universitas,

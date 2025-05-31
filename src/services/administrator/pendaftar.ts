@@ -1,10 +1,11 @@
 'use server'
 
 import { tablePendaftarColumns, tablePesertaColumns } from "@/src/databases/mysql/define-columns";
-import { db } from "@/src/databases/mysql/init";
+// import { db } from "@/src/databases/mysql/init";
 import { tablePendaftar, tablePengguna, tablePeserta } from "@/src/databases/mysql/schema";
 import { and, desc, eq, like, or } from "drizzle-orm";
 import { ServerActionResponse } from "../base";
+import { getDB } from "@/src/databases/mysql/init";
 
 /**
  * PendaftarType
@@ -41,6 +42,7 @@ export async function GetDaftarPeserta(options: {
   try {
     const offset = options.page ? ((options.page * 10) - 10) : 0;
 
+    const db = await getDB();
     const sq = db.select({
       id: tablePendaftar.id,
     })
@@ -108,6 +110,7 @@ export async function GetDataAlternatif(options: {
   try {
     const offset = options.page ? ((10 * options.page) - 10) : 0;
 
+    const db = await getDB();
     const sq = db.select({
       id: tablePendaftar.id
     }).from(tablePendaftar)
@@ -174,6 +177,7 @@ export async function UpdateStatusPendaftar(options: {
   status: "diproses" | "diterima";
 }): Promise<ServerActionResponse<unknown>> {
   try {
+    const db = await getDB();
     await db.update(tablePendaftar).set({ status: options.status }).where(eq(tablePendaftar.id, options.id));
     return {
       response: "success",
@@ -194,6 +198,7 @@ export async function UpdateStatusPendaftar(options: {
 
 export async function GetPendaftarDiterima(periodeSeleksiId: number): Promise<ServerActionResponse<DataAlternatifDiterimaType[]>> {
   try {
+    const db = await getDB();
     const pendaftarDiterima = await db.select({
       id: tablePendaftar.id,
       nama_lengkap: tablePeserta.nama_lengkap,

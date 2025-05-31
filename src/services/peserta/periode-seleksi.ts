@@ -1,6 +1,6 @@
 'use server';
 
-import { db } from "@/src/databases/mysql/init";
+// import { db } from "@/src/databases/mysql/init";
 import { tableDokumen, tablePendaftar, tablePeriodeSeleksi } from "@/src/databases/mysql/schema";
 import { and, desc, eq, gte, like, not, sql } from "drizzle-orm";
 import * as jose from "jose";
@@ -8,6 +8,7 @@ import { cookies } from "next/headers";
 import { TokenPayload } from "../accounts/auth";
 import { DaftarPeriodeSeleksiValuesType } from "./zod-schema";
 import { ServerActionResponse } from "../base";
+import { getDB } from "@/src/databases/mysql/init";
 /**
  * Type
  */
@@ -24,6 +25,7 @@ export type StatusTerdaftarType = {
  */
 export async function GetPeriodeSeleksi(): Promise<ServerActionResponse<typeof tablePeriodeSeleksi.$inferSelect[]>> {
   try {
+    const db = await getDB();
     const dataPeriodeSeleksi = await db.select()
       .from(tablePeriodeSeleksi)
       .where(and(
@@ -66,6 +68,7 @@ export async function AddPendaftarPeriodeSeleksi(periodeSeleksiId: number, data:
     const { payload } = await jose.jwtDecrypt(token.value, secretToken);
     const { ID } = payload as TokenPayload;
 
+    const db = await getDB();
     await db.transaction(async (tx) => {
       // insert@sp_universitas
       const arrayBuffer_sp_universitas = await data.sp_universitas.arrayBuffer();
@@ -144,6 +147,7 @@ export async function GetTerdaftarPeriodeSeleksi(): Promise<ServerActionResponse
   try {
     const { payload } = await jose.jwtDecrypt(token.value, secretToken);
     const { ID } = payload as TokenPayload;
+    const db = await getDB();
     const terdaftarPeriodeSeleksi = await db.select({
       periode_seleksi_id: tablePendaftar.periode_seleksi_id
     })
@@ -189,6 +193,8 @@ export async function GetDataStatusTerdaftar(options: {
     const { ID } = payload as TokenPayload;
 
     const offset = options.page ? (options.page * 10 - 10) : 0;
+
+    const db = await getDB();
     const dataTerdaftarPeriodeSeleksi = await db.select()
       .from(tablePendaftar)
       .innerJoin(tablePeriodeSeleksi, eq(tablePendaftar.periode_seleksi_id, tablePeriodeSeleksi.id))

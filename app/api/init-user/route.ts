@@ -3,8 +3,9 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { eq } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
-import { db } from "@/src/databases/mysql/init";
+// import { db } from "@/src/databases/mysql/init";
 import { tableAdministrator, tablePengguna } from "@/src/databases/mysql/schema";
+import { getDB } from "@/src/databases/mysql/init";
 
 const admuserschema = z.object({
   email: z.string().email(),
@@ -33,6 +34,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(err, { status: 400 });
   }
 
+  const db = await getDB();
   const check = await db.query.tablePengguna.findFirst({
     where: eq(tablePengguna.email, validate.data.email)
   });

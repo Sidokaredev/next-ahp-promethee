@@ -1,10 +1,11 @@
 'use server';
 
 import { PeriodeSeleksiValuesType } from "./zod-schema";
-import { db } from "@/src/databases/mysql/init";
+// import { db } from "@/src/databases/mysql/init";
 import { tablePeriodeSeleksi } from "@/src/databases/mysql/schema";
 import { ServerActionResponse } from "../base";
 import { and, desc, eq, like } from "drizzle-orm";
+import { getDB } from "@/src/databases/mysql/init";
 
 /**
  * Type
@@ -25,6 +26,7 @@ export type PeriodeSeleksiDetailType = {
 // periode-seleksi@create
 export async function AddPeriodeSeleksi(data: PeriodeSeleksiValuesType): Promise<ServerActionResponse<unknown>> {
   try {
+    const db = await getDB();
     await db.insert(tablePeriodeSeleksi).values({
       nama: data.nama,
       deskripsi: data.deskripsi,
@@ -57,6 +59,7 @@ export async function GetPeriodeSeleksi(options: {
     page: 1
   }): Promise<ServerActionResponse<PeriodeSeleksiDetailType>> {
   try {
+    const db = await getDB();
     const countPeriodeSeleksi: Promise<number> = db.$count(
       tablePeriodeSeleksi,
       options.query ? like(tablePeriodeSeleksi.nama, `%${options.query}%`) : undefined
@@ -105,6 +108,7 @@ export async function GetPeriodeSeleksi(options: {
 // periode-seleksi@change
 export async function ChangePeriodeSeleksi(id: number, data: PeriodeSeleksiValuesType): Promise<ServerActionResponse<unknown>> {
   try {
+    const db = await getDB();
     await db.update(tablePeriodeSeleksi)
       .set({ ...data, updated_at: new Date() })
       .where(eq(tablePeriodeSeleksi.id, id));
