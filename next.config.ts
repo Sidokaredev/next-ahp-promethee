@@ -20,6 +20,8 @@ const nextConfig: NextConfig = {
     }
   },
   devIndicators: false,
+  output: "standalone",
+
 };
 
 export default nextConfig;

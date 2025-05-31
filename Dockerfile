@@ -1,28 +1,34 @@
-# Build Stage
+# dependencies layer
+FROM node:20.10.0-alpine AS deps
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+
+RUN npm install --legacy-peer-deps
+
+# code layer
 FROM node:20.10.0-alpine AS builder
 
 WORKDIR /app
 
-# Copy only what's needed for install & build
-COPY package.json package-lock.json ./
-COPY next.config.ts ./
-RUN npm install --legacy-peer-deps
+COPY --from=deps /app/node_modules ./node_modules
 
 COPY . .
+
 RUN npm run build
 
-# Runtime Stage
-FROM node:20.10.0-alpine
+# runtime
+FROM node:20.10.0-alpine AS runner
+
+ENV NODE_ENV=production
 
 WORKDIR /app
 
-# Copy only runtime dependencies
-COPY package.json package-lock.json ./
-RUN npm install --legacy-peer-deps --omit=dev
-
-# Copy build output
-COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/.next/static ./.next/static
 
 EXPOSE 3000
-CMD ["npm", "run", "start"]
+
+CMD [ "node", "server.js" ]
