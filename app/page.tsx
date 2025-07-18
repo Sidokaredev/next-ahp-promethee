@@ -5,11 +5,39 @@ import HomeNavigation from "@/components/navigations/home-navigation";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import DialogRegistrasiPeserta from "./_components/dialog-registrasi-peserta";
+import DialogPeriodeSeleksi from "./_components/dialog-periode-seleksi";
+import DialogKelengkapanDokumen from "./_components/dialog-kelengkapan-dokumen";
+import DialogCekStatus from "./_components/dialog-cek-status";
+import { CheckCredential } from "@/src/services/base";
+import MessageNotification from "@/components/notifications/message";
+import { NotificationType } from "./globals-type";
 
 export default function Home() {
   const router = useRouter();
 
+  const [notification, setNotification] = useState<NotificationType>({
+    show: false,
+    name: "",
+    message: ""
+  });
+  const [alurPendaftaran, setAlurPendaftaran] = useState<Record<string, boolean>>({});
+  const [role, setRole] = useState<string>("");
+
+  useEffect(() => {
+    (async () => {
+      const token = await CheckCredential();
+      if (!token) {
+        return;
+      }
+      const data = await fetch("/api/roles?token=" + token, { method: "GET" });
+      const alias = await data.json();
+
+      setRole(alias["role"]);
+    })();
+  }, []);
   return (
     <div className="wrapper"
       style={{
@@ -17,6 +45,14 @@ export default function Home() {
 
       }}
     >
+      {/* message@notification */}
+      <MessageNotification
+        show={notification.show}
+        setShow={setNotification}
+        name={notification.name}
+        message={notification.message}
+        timeoutS={notification.seconds}
+      />
       <HomeNavigation />
       <div className="w-full bg-[#f2f4fd]">
         <div className="max-w-7xl mx-auto">
@@ -59,7 +95,15 @@ export default function Home() {
             </p>
           </div>
           <div className="flex justify-between">
-            <div className="registrasi max-w-[250px]">
+            <div className="registrasi max-w-[250px]"
+              onClick={() => {
+                setAlurPendaftaran(prev => ({
+                  ...prev,
+                  ["registrasi"]: true,
+                  ["registrasi.step1"]: true,
+                }));
+              }}
+            >
               <Image
                 className="border border-[#E5F2FC] rounded-sm stage-items"
                 src={"/images/freepik-register.jpg"}
@@ -68,10 +112,21 @@ export default function Home() {
                 alt="Register Illustration"
               />
               <p className="mt-3 text-center font-semibold text-gray-500">
-                Registrasi, data diri dan kelengkapan dokumen
+                Pendaftaran akun, data diri mahasiswa/i dan perguruan tinggi
               </p>
             </div>
-            <div className="pilih-periode max-w-[250px]">
+            <DialogRegistrasiPeserta
+              alurPendaftaran={alurPendaftaran}
+              setAlurPendaftaran={setAlurPendaftaran}
+            />
+            <div className="pilih-periode max-w-[250px]"
+              onClick={() => {
+                setAlurPendaftaran(prev => ({
+                  ...prev,
+                  ["periode-seleksi"]: true,
+                }));
+              }}
+            >
               <Image
                 className="border border-[#E5F2FC] rounded-sm stage-items"
                 src={"/images/7140417_3497643.jpg"}
@@ -83,7 +138,19 @@ export default function Home() {
                 Pilih periode seleksi yang tersedia
               </p>
             </div>
-            <div className="apply max-w-[250px]">
+            <DialogPeriodeSeleksi
+              alurPendaftaran={alurPendaftaran}
+              setAlurPendaftaran={setAlurPendaftaran}
+            />
+            <div className="apply max-w-[250px]"
+              onClick={() => {
+                setAlurPendaftaran(prev => ({
+                  ...prev,
+                  ["kelengkapan-dokumen"]: true,
+                  ["kelengkapan-dokumen.1"]: true,
+                }));
+              }}
+            >
               <Image
                 className="border border-[#E5F2FC] rounded-sm stage-items"
                 src={"/images/apply-freepik.jpg"}
@@ -92,10 +159,31 @@ export default function Home() {
                 alt="Register Illustration"
               />
               <p className="mt-3 text-center font-semibold text-gray-500">
-                Cek data diri dan daftarkan
+                Siapkan kelengkapan dokumen dan daftarkan
               </p>
             </div>
-            <div className="pengumuman max-w-[250px]">
+            <DialogKelengkapanDokumen
+              alurPendaftaran={alurPendaftaran}
+              setAlurPendaftaran={setAlurPendaftaran}
+            />
+            <div className="pengumuman max-w-[250px]"
+              onClick={() => {
+                if (role == "") {
+                  setAlurPendaftaran(prev => ({
+                    ...prev,
+                    ["cek-status"]: true,
+                  }));
+                } else if (role == "peserta") {
+                  return redirect("/peserta");
+                } else if (role == "administrator") {
+                  setNotification({
+                    show: true,
+                    name: "Tidak di Izinkan!",
+                    message: "Administrator tidak di izinkan untuk mengakses dashboard peserta"
+                  })
+                }
+              }}
+            >
               <Image
                 className="border border-[#E5F2FC] rounded-sm stage-items"
                 src={"/images/push-notifications-concept-illustration_114360-4986.jpg"}
@@ -107,6 +195,10 @@ export default function Home() {
                 Cek status pendaftaran melalui dashboard peserta
               </p>
             </div>
+            <DialogCekStatus
+              alurPendaftaran={alurPendaftaran}
+              setAlurPendaftaran={setAlurPendaftaran}
+            />
           </div>
         </div>
       </div>

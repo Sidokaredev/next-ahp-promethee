@@ -158,7 +158,7 @@ export default function FormDaftarPeriodeSeleksi({
                 render={({ field }) => {
                   return (
                     <FormItem className="mb-3">
-                      <FormLabel className="text-gray-600">Surat Pengantar Bakesbangpol Provinsi</FormLabel>
+                      <FormLabel className="text-gray-600">Transkrip Nilai</FormLabel>
                       <FormControl>
                         <Input
                           name={field.name}

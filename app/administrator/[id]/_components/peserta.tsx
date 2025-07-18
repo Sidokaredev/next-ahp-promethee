@@ -179,11 +179,11 @@ export default function Peserta() {
                             }}
                           >
                             <FileCheck size={15} />
-                            <p>SP Bakesbangpol Provinsi</p>
+                            <p>Transkrip Nilai</p>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent side="right" className="bg-gray-800 text-gray-200 [&>span>svg]:fill-gray-800 [&>span>svg]:bg-gray-800">
-                          Lihat Surat Pengantar Bakesbangpol Provinsi
+                          Lihat Transkrip Nilai
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>

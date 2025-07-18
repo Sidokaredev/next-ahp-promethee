@@ -1,18 +1,20 @@
 # dependencies layer
-FROM node:20.10.0-alpine AS deps
+FROM node:20.10.0-alpine AS builder
 
 WORKDIR /app
 
 COPY package.json package-lock.json ./
 
-RUN npm install --legacy-peer-deps
+#RUN npm ci --legacy-peer-deps --only=production
+#RUN npm ci --legacy-peer-deps --omit=dev
+RUN npm ci --legacy-peer-deps
 
 # code layer
-FROM node:20.10.0-alpine AS builder
+#FROM node:20.10.0-alpine AS builder
 
-WORKDIR /app
+#WORKDIR /app
 
-COPY --from=deps /app/node_modules ./node_modules
+#COPY --from=deps /app/node_modules ./node_modules
 
 COPY . .
 

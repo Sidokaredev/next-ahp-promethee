@@ -171,7 +171,7 @@ export default function StatusPendaftaran() {
                         href={`/api/dokumen?docid=${data.pendaftar.sp_bakesbangpol_provinsi_id}`}
                         target="_blank"
                       >
-                        Bakesbangpol Provinsi Jatim
+                        Transkrip Nilai
                         <ArrowUpRight />
                       </Link>
                     </Button>
